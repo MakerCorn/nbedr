@@ -10,4 +10,5 @@
 - Provide mermaid diagrams where appropriate in documents
 - Implement 12-factor app principles whenever possible
 - Create unit test when needed to ensure reliability and error handling and place the files in a test folder
-- 
+- When creating release pipelines, set it up to be triggered manually where the version is entered as the tag. Include the changelog for all changes included in the current release. Use the standard versioning conventions.
+- Use @../local-raft-toolkit/raft-toolkit/ was the basis for this code. Use the same principles and approacha and common libraries in building this app.

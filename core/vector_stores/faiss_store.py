@@ -5,6 +5,7 @@ FAISS vector store implementation.
 import json
 import logging
 import pickle
+import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import numpy as np
@@ -75,6 +76,11 @@ class FAISSVectorStore(BaseVectorStore):
     async def add_documents(self, chunks: List[DocumentChunk]) -> List[str]:
         """Add document chunks to FAISS index."""
         try:
+            # Apply rate limiting for vector store operations
+            await self._apply_rate_limiting("add_documents")
+            
+            start_time = time.time()
+            
             vectors = []
             vector_ids = []
             
@@ -117,9 +123,14 @@ class FAISSVectorStore(BaseVectorStore):
                 
                 logger.info(f"Added {len(vectors)} documents to FAISS index")
             
+            # Record operation response time
+            response_time = time.time() - start_time
+            self._record_operation_response(response_time, "add_documents")
+            
             return vector_ids
             
         except Exception as e:
+            self._record_operation_error("add_documents_error")
             logger.error(f"Failed to add documents to FAISS: {e}")
             raise
     
@@ -131,6 +142,11 @@ class FAISSVectorStore(BaseVectorStore):
     ) -> List[VectorSearchResult]:
         """Search for similar vectors in FAISS index."""
         try:
+            # Apply rate limiting for vector store operations
+            await self._apply_rate_limiting("search")
+            
+            start_time = time.time()
+            
             # Convert query to numpy array
             query_vector = np.array(query_embedding, dtype=np.float32).reshape(1, -1)
             
@@ -174,10 +190,15 @@ class FAISSVectorStore(BaseVectorStore):
                 )
                 search_results.append(search_result)
             
+            # Record operation response time
+            response_time = time.time() - start_time
+            self._record_operation_response(response_time, "search")
+            
             logger.info(f"Found {len(search_results)} results in FAISS index")
             return search_results
             
         except Exception as e:
+            self._record_operation_error("search_error")
             logger.error(f"Failed to search FAISS index: {e}")
             raise
     

@@ -47,6 +47,130 @@ This application handles the **preparation phase** - the crucial foundation that
 
 This tool provides a streamlined solution for processing documents, generating embeddings, and storing them in vector databases. Built on the foundation of the excellent RAFT toolkit, it focuses specifically on embedding operations and vector database management - essentially preparing your documents so they can be used effectively in AI applications.
 
+### Rate Limiting and Throttling
+
+nBedR includes comprehensive rate limiting and throttling capabilities to ensure stable, cost-effective operation with cloud-based AI services and vector databases. This prevents quota exhaustion, reduces costs, and maintains consistent performance.
+
+#### Why Rate Limiting Matters
+
+When processing large document collections, you'll make thousands of API calls to embedding providers and vector databases. Without proper rate limiting:
+
+- **API Quotas**: You'll hit rate limits and receive 429 errors
+- **Costs**: Burst traffic can lead to unexpected charges
+- **Performance**: Services may throttle or block your requests
+- **Reliability**: Processing jobs may fail partially through completion
+
+#### Rate Limiting Strategies
+
+nBedR supports four intelligent rate limiting strategies:
+
+1. **Fixed Window** (`fixed_window`): Classic rate limiting with fixed time windows
+2. **Sliding Window** (`sliding_window`): More accurate rate limiting with rolling time windows  
+3. **Token Bucket** (`token_bucket`): Allows burst traffic up to configured limits
+4. **Adaptive** (`adaptive`): Automatically adjusts rates based on response times
+
+#### Provider-Specific Rate Limiting
+
+Rate limiting is configured separately for embedding providers and vector databases:
+
+**Embedding Providers:**
+```env
+# Enable rate limiting for embedding providers
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STRATEGY=sliding_window
+RATE_LIMIT_REQUESTS_PER_MINUTE=500
+RATE_LIMIT_TOKENS_PER_MINUTE=350000
+RATE_LIMIT_MAX_BURST=100
+```
+
+**Vector Databases:**
+```env
+# Enable rate limiting for vector store operations
+VECTOR_STORE_RATE_LIMIT_ENABLED=true
+VECTOR_STORE_RATE_LIMIT_STRATEGY=sliding_window
+VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE=300
+VECTOR_STORE_RATE_LIMIT_MAX_BURST=50
+```
+
+#### Pre-configured Rate Limit Presets
+
+nBedR includes optimized presets for popular services:
+
+| Service | Preset | RPM | TPM | Strategy | Description |
+|---------|--------|-----|-----|----------|-------------|
+| OpenAI Tier 1 | `openai_embeddings_tier1` | 500 | 350,000 | sliding_window | Standard OpenAI limits |
+| OpenAI Tier 2 | `openai_embeddings_tier2` | 5,000 | 2,000,000 | sliding_window | Higher tier limits |
+| Azure OpenAI | `azure_openai_standard` | 120 | 240,000 | sliding_window | Standard deployment |
+| AWS Bedrock | `aws_bedrock_titan` | 2,000 | 400,000 | sliding_window | Titan embedding limits |
+| Google Vertex | `google_vertex_gecko` | 600 | 1,000,000 | sliding_window | Gecko model limits |
+| Local Providers | `local_providers` | 1,000 | N/A | sliding_window | Conservative local limits |
+
+#### Best Practices for Rate Limiting Configuration
+
+**For Production Workloads:**
+- Use `sliding_window` strategy for accuracy
+- Set rates to 80% of your actual limits
+- Enable burst handling for peak loads
+- Monitor rate limit statistics regularly
+
+**For Development:**
+- Use `conservative` preset for safety
+- Enable detailed logging for debugging
+- Test with small document sets first
+
+**For High-Volume Processing:**
+- Use `adaptive` strategy for auto-tuning
+- Configure multiple workers with shared rate limits
+- Monitor response times and adjust accordingly
+
+**Cost Optimization:**
+- Set token limits to control embedding costs
+- Use local providers for development
+- Batch documents efficiently to minimize API calls
+
+#### Rate Limiting Configuration Examples
+
+**Conservative Setup (Safe for Testing):**
+```env
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STRATEGY=sliding_window
+RATE_LIMIT_REQUESTS_PER_MINUTE=60
+RATE_LIMIT_TOKENS_PER_MINUTE=50000
+RATE_LIMIT_MAX_BURST=10
+```
+
+**Production Setup (OpenAI Tier 1):**
+```env
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STRATEGY=sliding_window
+RATE_LIMIT_REQUESTS_PER_MINUTE=400  # 80% of 500 limit
+RATE_LIMIT_TOKENS_PER_MINUTE=280000  # 80% of 350k limit
+RATE_LIMIT_MAX_BURST=80
+RATE_LIMIT_TARGET_RESPONSE_TIME=2.0
+```
+
+**High-Volume Setup (Adaptive):**
+```env
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STRATEGY=adaptive
+RATE_LIMIT_REQUESTS_PER_MINUTE=1000
+RATE_LIMIT_TOKENS_PER_MINUTE=800000
+RATE_LIMIT_TARGET_RESPONSE_TIME=1.5
+RATE_LIMIT_MAX_RESPONSE_TIME=5.0
+```
+
+#### Monitoring Rate Limiting
+
+nBedR provides detailed rate limiting statistics accessible through the application:
+
+- **Total Requests**: Number of API calls made
+- **Rate Limit Hits**: How many times rate limiting was applied
+- **Average Response Time**: Performance monitoring
+- **Current Rate**: Real-time rate limiting status
+- **Wait Time**: Total time spent waiting due to rate limits
+
+Use these metrics to optimize your rate limiting configuration for your specific workload and API tier.
+
 ## Features
 
 ### 🚀 Core Capabilities
@@ -69,6 +193,7 @@ This tool provides a streamlined solution for processing documents, generating e
 - **ChromaDB**: Open-source embedding database
 - **Azure AI Search**: Microsoft's enterprise search service with vector capabilities
 - **AWS Elasticsearch**: Amazon's managed Elasticsearch with vector search support
+- **PGVector**: PostgreSQL with pgvector extension for vector operations
 
 ## Architecture
 
@@ -88,9 +213,290 @@ graph TD
     E3[ChromaDB] --> E
     E4[Azure AI Search] --> E
     E5[AWS Elasticsearch] --> E
+    E6[PGVector] --> E
     
     F[Configuration] --> B
     G[Rate Limiter] --> D
+```
+
+## Using Your Embedding Database
+
+Once you've created your embedding database with NBEDR, you can integrate it into RAG applications and chatbots. Here's how to query and utilize your embeddings effectively.
+
+### 🔍 **RAG Query Flow**
+
+```mermaid
+graph LR
+    A[User Question] --> B[Generate Query Embedding]
+    B --> C[Search Vector Database]
+    C --> D[Retrieve Similar Chunks]
+    D --> E[Add to LLM Context]
+    E --> F[Generate Answer]
+    F --> G[Return Response]
+```
+
+### 🚀 **Direct Search with NBEDR CLI**
+
+```bash
+# Search your embedding database
+python nbedr.py search \
+    --query "How do I configure SSL certificates?" \
+    --vector-db faiss \
+    --index-path ./embeddings_db \
+    --top-k 5
+
+# Advanced search with filters
+python nbedr.py search \
+    --query "database optimization techniques" \
+    --vector-db pgvector \
+    --filters '{"source": "technical-docs"}' \
+    --top-k 10
+```
+
+### 💻 **Programmatic Integration Examples**
+
+#### **Simple RAG Pipeline**
+```python
+from core.vector_stores import FAISSVectorStore
+from core.clients import create_provider_from_config
+from core.config import get_config
+
+# Load configuration and initialize components
+config = get_config()
+embedding_provider = create_provider_from_config(config)
+vector_store = FAISSVectorStore({'faiss_index_path': './embeddings_db'})
+
+async def answer_question(question: str) -> str:
+    # 1. Generate embedding for the question
+    result = await embedding_provider.generate_embeddings([question])
+    query_embedding = result.embeddings[0]
+    
+    # 2. Search for similar documents
+    search_results = await vector_store.search(
+        query_embedding=query_embedding,
+        top_k=5
+    )
+    
+    # 3. Combine context for LLM
+    context = "\n\n".join([result.content for result in search_results])
+    
+    # 4. Generate answer with your LLM
+    prompt = f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
+    # (Add your LLM call here)
+    
+    return answer
+```
+
+#### **Chatbot Integration**
+```python
+import asyncio
+from typing import List, Dict
+
+class RAGChatbot:
+    def __init__(self, vector_store, embedding_provider):
+        self.vector_store = vector_store
+        self.embedding_provider = embedding_provider
+        self.conversation_history = []
+    
+    async def chat(self, message: str) -> str:
+        # Generate embedding for user message
+        embedding_result = await self.embedding_provider.generate_embeddings([message])
+        query_embedding = embedding_result.embeddings[0]
+        
+        # Search for relevant context
+        search_results = await self.vector_store.search(
+            query_embedding=query_embedding,
+            top_k=3
+        )
+        
+        # Build context with conversation history
+        context_chunks = [f"Document: {r.content}" for r in search_results]
+        recent_history = self.conversation_history[-4:]  # Last 2 exchanges
+        
+        # Combine for LLM prompt
+        context = "\n".join(context_chunks)
+        history = "\n".join([f"{h['role']}: {h['content']}" for h in recent_history])
+        
+        # Generate response (add your LLM integration)
+        response = await self.generate_llm_response(context, history, message)
+        
+        # Update conversation history
+        self.conversation_history.extend([
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": response}
+        ])
+        
+        return response
+```
+
+#### **Batch Document Processing**
+```python
+async def process_user_queries(queries: List[str]) -> List[Dict]:
+    """Process multiple queries efficiently"""
+    # Generate embeddings for all queries at once
+    embedding_result = await embedding_provider.generate_embeddings(queries)
+    
+    results = []
+    for i, query_embedding in enumerate(embedding_result.embeddings):
+        # Search for each query
+        search_results = await vector_store.search(
+            query_embedding=query_embedding,
+            top_k=5
+        )
+        
+        results.append({
+            'query': queries[i],
+            'matches': [
+                {
+                    'content': r.content,
+                    'source': r.source,
+                    'similarity': r.similarity_score
+                }
+                for r in search_results
+            ]
+        })
+    
+    return results
+```
+
+### 🎯 **Database-Specific Usage**
+
+#### **FAISS (Local)**
+```python
+# Load and search FAISS index
+from core.vector_stores import FAISSVectorStore
+
+store = FAISSVectorStore({'faiss_index_path': './my_embeddings'})
+await store.initialize()
+
+results = await store.search(query_embedding, top_k=10)
+```
+
+#### **Pinecone (Cloud)**
+```python
+# Search Pinecone index
+from core.vector_stores import PineconeVectorStore
+
+store = PineconeVectorStore({
+    'pinecone_api_key': 'your-key',
+    'pinecone_environment': 'your-env',
+    'pinecone_index_name': 'rag-embeddings'
+})
+
+results = await store.search(
+    query_embedding=query_embedding,
+    top_k=5,
+    filters={'source': 'documentation'}
+)
+```
+
+#### **PGVector (SQL)**
+```python
+# Combine vector search with SQL queries
+from core.vector_stores import PGVectorStore
+
+store = PGVectorStore({
+    'pgvector_host': 'localhost',
+    'pgvector_database': 'vectordb',
+    'pgvector_user': 'postgres',
+    'pgvector_password': 'password'
+})
+
+# Search with metadata filters
+results = await store.search(
+    query_embedding=query_embedding,
+    top_k=10,
+    filters={'metadata.document_type': 'manual'}
+)
+```
+
+### 🔧 **Advanced Usage Patterns**
+
+#### **Hybrid Search (Keyword + Semantic)**
+```python
+async def hybrid_search(query: str, keywords: List[str]) -> List[Dict]:
+    # Semantic search
+    embedding_result = await embedding_provider.generate_embeddings([query])
+    semantic_results = await vector_store.search(
+        query_embedding=embedding_result.embeddings[0],
+        top_k=20
+    )
+    
+    # Keyword filtering
+    keyword_filtered = [
+        r for r in semantic_results 
+        if any(keyword.lower() in r.content.lower() for keyword in keywords)
+    ]
+    
+    return keyword_filtered[:10]
+```
+
+#### **Contextual Chunk Assembly**
+```python
+async def get_expanded_context(query: str, expand_chunks: int = 2) -> str:
+    # Find relevant chunks
+    embedding_result = await embedding_provider.generate_embeddings([query])
+    results = await vector_store.search(
+        query_embedding=embedding_result.embeddings[0],
+        top_k=5
+    )
+    
+    # Group by source and expand context
+    context_blocks = []
+    for result in results:
+        # Get neighboring chunks for better context
+        expanded_context = await get_neighboring_chunks(
+            result.source, 
+            result.id, 
+            expand_chunks
+        )
+        context_blocks.append(expanded_context)
+    
+    return "\n\n---\n\n".join(context_blocks)
+```
+
+### 📊 **Performance Optimization**
+
+#### **Embedding Caching**
+```python
+from functools import lru_cache
+import hashlib
+
+class CachedEmbeddingProvider:
+    def __init__(self, provider):
+        self.provider = provider
+        self.cache = {}
+    
+    async def generate_embeddings(self, texts: List[str]):
+        # Hash texts for cache key
+        cache_key = hashlib.md5('|'.join(texts).encode()).hexdigest()
+        
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        
+        result = await self.provider.generate_embeddings(texts)
+        self.cache[cache_key] = result
+        return result
+```
+
+### 🎨 **Integration with Popular Frameworks**
+
+#### **LangChain Integration**
+```python
+from langchain.embeddings.base import Embeddings
+from langchain.vectorstores import VectorStore
+
+class NBEDREmbeddings(Embeddings):
+    def __init__(self, provider):
+        self.provider = provider
+    
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        result = asyncio.run(self.provider.generate_embeddings(texts))
+        return result.embeddings
+    
+    def embed_query(self, text: str) -> List[float]:
+        result = asyncio.run(self.provider.generate_embeddings([text]))
+        return result.embeddings[0]
 ```
 
 ## Quick Start
@@ -113,7 +519,7 @@ pip install -e .[cloud,dev]
 
 1. **Create embeddings from local documents:**
 ```bash
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source local \
     --source-path ./documents \
     --vector-db faiss \
@@ -122,7 +528,7 @@ python rag_cli.py create-embeddings \
 
 2. **Process documents from S3:**
 ```bash
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source s3 \
     --source-path s3://my-bucket/documents/ \
     --vector-db pinecone \
@@ -131,7 +537,7 @@ python rag_cli.py create-embeddings \
 
 3. **Use Azure AI Search:**
 ```bash
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source local \
     --source-path ./documents \
     --vector-db azure_ai_search \
@@ -141,16 +547,26 @@ python rag_cli.py create-embeddings \
 
 4. **Use AWS Elasticsearch:**
 ```bash
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source local \
     --source-path ./documents \
     --vector-db aws_elasticsearch \
     --aws-elasticsearch-endpoint https://your-domain.region.es.amazonaws.com
 ```
 
-5. **Search for similar documents:**
+5. **Use PGVector:**
 ```bash
-python rag_cli.py search \
+python nbedr.py create-embeddings \
+    --source local \
+    --source-path ./documents \
+    --vector-db pgvector \
+    --pgvector-host localhost \
+    --pgvector-database vectordb
+```
+
+6. **Search for similar documents:**
+```bash
+python nbedr.py search \
     --query "machine learning algorithms" \
     --vector-db faiss \
     --index-path ./embeddings_db \
@@ -192,6 +608,14 @@ AWS_ELASTICSEARCH_INDEX_NAME=rag-embeddings
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 
+# PGVector Configuration (if using PGVector)
+PGVECTOR_HOST=localhost
+PGVECTOR_PORT=5432
+PGVECTOR_DATABASE=vectordb
+PGVECTOR_USER=postgres
+PGVECTOR_PASSWORD=your_postgres_password
+PGVECTOR_TABLE_NAME=rag_embeddings
+
 # Processing Configuration
 CHUNK_SIZE=512
 CHUNKING_STRATEGY=semantic
@@ -205,14 +629,14 @@ MAX_WORKERS=4
 
 ```bash
 # Semantic chunking (uses embeddings to determine boundaries)
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --chunking-strategy semantic \
     --chunk-size 512 \
     --source local \
     --source-path ./docs
 
 # Fixed-size chunking
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --chunking-strategy fixed \
     --chunk-size 1000 \
     --chunk-overlap 100 \
@@ -224,7 +648,7 @@ python rag_cli.py create-embeddings \
 
 ```bash
 # Process large document collections
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source s3 \
     --source-path s3://large-corpus/ \
     --batch-size 50 \
@@ -237,7 +661,7 @@ python rag_cli.py create-embeddings \
 
 ```bash
 # Preview what will be processed without actually doing it
-python rag_cli.py create-embeddings \
+python nbedr.py create-embeddings \
     --source local \
     --source-path ./documents \
     --preview
@@ -433,15 +857,292 @@ CHUNK_OVERLAP=80
 
 ## Configuration Options
 
-### Embedding Models
+## Embedding Providers: Choose Your AI Platform
 
-#### **OpenAI Models** (Recommended)
-- **`text-embedding-3-large`**: Highest quality, best for complex content (3072 dimensions)
-- **`text-embedding-3-small`**: Good balance of quality and cost (1536 dimensions)  
-- **`text-embedding-ada-002`**: Legacy model, still reliable (1536 dimensions)
+NBEDR supports **7 different embedding providers**, from major cloud platforms to local solutions. This gives you complete flexibility to choose the right solution for your needs, budget, and privacy requirements.
 
-#### **Local Models**
-- **`nomic-embed-text`**: Free, runs locally, good for privacy-sensitive content
+### 🌟 **Provider Overview**
+
+| **Provider** | **Type** | **Best For** | **Cost** | **Privacy** | **Setup** |
+|---|---|---|---|---|---|
+| **OpenAI** | Cloud | Production, quality | Pay-per-use | Shared | Easy |
+| **Azure OpenAI** | Cloud | Enterprise, compliance | Pay-per-use | Enterprise | Medium |
+| **AWS Bedrock** | Cloud | AWS ecosystem | Pay-per-use | Enterprise | Medium |
+| **Google Vertex AI** | Cloud | Google ecosystem | Pay-per-use | Enterprise | Medium |
+| **LMStudio** | Local | Development, testing | Free | Complete | Easy |
+| **Ollama** | Local | Privacy, offline use | Free | Complete | Easy |
+| **Llama.cpp** | Local | Custom models, research | Free | Complete | Hard |
+
+### 🚀 **Quick Start by Provider**
+
+#### **OpenAI** (Recommended for Most Users)
+```bash
+# Set your API key
+export EMBEDDING_PROVIDER=openai
+export OPENAI_API_KEY=your_api_key_here
+export EMBEDDING_MODEL=text-embedding-3-small
+
+# Run embedding generation
+python nbedr.py create-embeddings --source local --source-path ./documents
+```
+
+#### **Azure OpenAI** (Enterprise)
+```bash
+# Configure Azure OpenAI
+export EMBEDDING_PROVIDER=azure_openai
+export AZURE_OPENAI_API_KEY=your_api_key
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+export AZURE_OPENAI_DEPLOYMENT_NAME=your-embedding-deployment
+
+python nbedr.py create-embeddings --source local --source-path ./documents
+```
+
+#### **Ollama** (Local & Free)
+```bash
+# Install and start Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama serve
+
+# Pull an embedding model
+ollama pull nomic-embed-text
+
+# Configure NBEDR
+export EMBEDDING_PROVIDER=ollama
+export EMBEDDING_MODEL=nomic-embed-text
+
+python nbedr.py create-embeddings --source local --source-path ./documents
+```
+
+### 📋 **Complete Configuration Guide**
+
+#### **OpenAI Configuration**
+```env
+# Provider selection
+EMBEDDING_PROVIDER=openai
+
+# Authentication
+OPENAI_API_KEY=your_api_key_here
+OPENAI_ORGANIZATION=your_org_id  # Optional
+
+# Model settings
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=1536
+
+# Performance
+OPENAI_TIMEOUT=60
+OPENAI_MAX_RETRIES=3
+EMBEDDING_BATCH_SIZE=100
+```
+
+**Available Models:**
+- `text-embedding-3-large` (3072 dims) - Highest quality, $0.00013/1K tokens
+- `text-embedding-3-small` (1536 dims) - Best balance, $0.00002/1K tokens  
+- `text-embedding-ada-002` (1536 dims) - Legacy, $0.0001/1K tokens
+
+#### **Azure OpenAI Configuration**
+```env
+# Provider selection
+EMBEDDING_PROVIDER=azure_openai
+
+# Authentication
+AZURE_OPENAI_API_KEY=your_api_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-02-01
+
+# Deployment mapping
+AZURE_OPENAI_DEPLOYMENT_NAME=your-embedding-deployment
+# For multiple models (JSON format):
+AZURE_OPENAI_DEPLOYMENT_MAPPING={"text-embedding-3-small": "embedding-small", "text-embedding-3-large": "embedding-large"}
+
+# Model settings
+EMBEDDING_MODEL=text-embedding-3-small
+```
+
+#### **AWS Bedrock Configuration**
+```env
+# Provider selection
+EMBEDDING_PROVIDER=aws_bedrock
+
+# AWS credentials (or use IAM roles)
+AWS_BEDROCK_REGION=us-east-1
+AWS_BEDROCK_ACCESS_KEY_ID=your_access_key
+AWS_BEDROCK_SECRET_ACCESS_KEY=your_secret_key
+
+# Model settings
+EMBEDDING_MODEL=amazon.titan-embed-text-v1
+```
+
+**Available Models:**
+- `amazon.titan-embed-text-v1` (1536 dims) - Amazon's embedding model
+- `amazon.titan-embed-text-v2:0` (1024 dims) - Latest Amazon model
+- `cohere.embed-english-v3` (1024 dims) - Cohere English embeddings
+- `cohere.embed-multilingual-v3` (1024 dims) - Cohere multilingual
+
+#### **Google Vertex AI Configuration**
+```env
+# Provider selection
+EMBEDDING_PROVIDER=google_vertex
+
+# Google Cloud settings
+GOOGLE_VERTEX_PROJECT_ID=your-project-id
+GOOGLE_VERTEX_LOCATION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+
+# Model settings
+EMBEDDING_MODEL=textembedding-gecko@003
+```
+
+**Available Models:**
+- `textembedding-gecko@003` (768 dims) - Latest Gecko model
+- `textembedding-gecko@002` (768 dims) - Previous version
+- `text-embedding-004` (768 dims) - Latest general model
+- `text-multilingual-embedding-002` (768 dims) - Multilingual support
+
+#### **LMStudio Configuration** (Local)
+```env
+# Provider selection
+EMBEDDING_PROVIDER=lmstudio
+
+# Server settings
+LMSTUDIO_BASE_URL=http://localhost:1234
+LMSTUDIO_API_KEY=optional_api_key  # If you set one
+
+# Model settings (use whatever model you loaded in LMStudio)
+EMBEDDING_MODEL=your-loaded-model
+```
+
+**Setup Steps:**
+1. Download and install [LMStudio](https://lmstudio.ai/)
+2. Download an embedding model (like `nomic-ai/nomic-embed-text-v1.5-GGUF`)
+3. Load the model and start the local server
+4. Configure NBEDR with the settings above
+
+#### **Ollama Configuration** (Local)
+```env
+# Provider selection
+EMBEDDING_PROVIDER=ollama
+
+# Server settings
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_TIMEOUT=120
+
+# Model settings
+EMBEDDING_MODEL=nomic-embed-text
+```
+
+**Setup Steps:**
+1. Install Ollama: `curl -fsSL https://ollama.ai/install.sh | sh`
+2. Start Ollama: `ollama serve`
+3. Pull an embedding model: `ollama pull nomic-embed-text`
+4. Configure NBEDR with the settings above
+
+**Popular Embedding Models:**
+- `nomic-embed-text` (768 dims) - High-quality English embeddings
+- `mxbai-embed-large` (1024 dims) - Large general-purpose model
+- `snowflake-arctic-embed` (1024 dims) - Snowflake's model
+- `all-minilm` (384 dims) - Lightweight multilingual
+
+#### **Llama.cpp Configuration** (Local)
+```env
+# Provider selection
+EMBEDDING_PROVIDER=llamacpp
+
+# Server settings
+LLAMACPP_BASE_URL=http://localhost:8000
+LLAMACPP_MODEL_NAME=your-model-name
+LLAMACPP_DIMENSIONS=4096  # Set based on your model
+
+# Authentication (if needed)
+LLAMACPP_API_KEY=optional_api_key
+```
+
+**Setup Steps:**
+1. Install llama-cpp-python: `pip install llama-cpp-python[server]`
+2. Download a GGUF embedding model
+3. Start the server: `python -m llama_cpp.server --model path/to/model.gguf --embedding`
+4. Configure NBEDR with the settings above
+
+### 🎯 **Provider Selection Guide**
+
+#### **Choose OpenAI when:**
+- You want the highest quality embeddings
+- Cost is not the primary concern
+- You need reliable, proven performance
+- You're building a production application
+
+#### **Choose Azure OpenAI when:**
+- You're in an enterprise environment
+- You need compliance guarantees (SOC 2, HIPAA)
+- You're already using Azure services
+- You need dedicated capacity and SLAs
+
+#### **Choose AWS Bedrock when:**
+- You're already using AWS services
+- You want access to multiple model providers
+- You need enterprise-grade security
+- You prefer AWS pricing models
+
+#### **Choose Google Vertex AI when:**
+- You're using Google Cloud Platform
+- You need integration with other Google AI services
+- You want access to Google's latest models
+- You're building multilingual applications
+
+#### **Choose LMStudio when:**
+- You're developing and testing locally
+- You want an easy GUI for model management
+- You need to experiment with different models
+- You want local processing without complexity
+
+#### **Choose Ollama when:**
+- Privacy is paramount (data never leaves your machine)
+- You want completely free operation
+- You need offline capabilities
+- You're comfortable with command-line tools
+
+#### **Choose Llama.cpp when:**
+- You need maximum control and customization
+- You're doing research or advanced development
+- You want to use custom or fine-tuned models
+- Performance optimization is critical
+
+### 💰 **Cost Comparison**
+
+| **Provider** | **Cost Model** | **Example Cost (1M tokens)** |
+|---|---|---|
+| **OpenAI** | Pay-per-token | $20-130 depending on model |
+| **Azure OpenAI** | Pay-per-token | Similar to OpenAI |
+| **AWS Bedrock** | Pay-per-token | $10-100 depending on model |
+| **Google Vertex** | Pay-per-token | $25-200 depending on model |
+| **LMStudio** | Free | $0 |
+| **Ollama** | Free | $0 |
+| **Llama.cpp** | Free | $0 |
+
+### 🔒 **Privacy & Security**
+
+#### **Cloud Providers (OpenAI, Azure, AWS, Google)**
+- Data is sent to external servers
+- Subject to provider's privacy policies
+- Enterprise options available with enhanced security
+- Data retention policies vary by provider
+
+#### **Local Providers (LMStudio, Ollama, Llama.cpp)**  
+- Data never leaves your machine
+- Complete privacy and control
+- No internet required for processing
+- Ideal for sensitive or proprietary content
+
+### 🚀 **Performance Characteristics**
+
+| **Provider** | **Latency** | **Throughput** | **Reliability** |
+|---|---|---|---|
+| **OpenAI** | Low | High | Very High |
+| **Azure OpenAI** | Low | High | Very High |
+| **AWS Bedrock** | Medium | Medium | High |
+| **Google Vertex** | Low | High | High |
+| **LMStudio** | Very Low | Medium | Medium |
+| **Ollama** | Very Low | Medium | Medium |
+| **Llama.cpp** | Very Low | Variable | Medium |
 
 ### Vector Databases
 
@@ -492,19 +1193,35 @@ CHUNK_OVERLAP=80
   - **Cost Complexity**: Pricing can be complex with multiple factors
   - **Version Lag**: May not have latest Elasticsearch features immediately
 
+#### **PGVector** (PostgreSQL with pgvector extension)
+- **Best for**: PostgreSQL shops, relational data integration, cost-conscious deployments
+- **Pros**:
+  - **Familiar Technology**: Built on PostgreSQL, widely known and trusted
+  - **ACID Compliance**: Full transactional support and data consistency
+  - **Cost-Effective**: Use existing PostgreSQL infrastructure
+  - **Rich Querying**: Combine vector search with SQL joins and filters
+  - **Self-Hosted**: Complete control over data and infrastructure
+  - **Active Development**: Growing ecosystem and community support
+  - **Backup & Recovery**: Leverage PostgreSQL's robust backup solutions
+- **Cons**:
+  - **Performance Limitations**: May not match specialized vector databases at scale
+  - **Manual Setup**: Requires PostgreSQL and pgvector extension installation
+  - **Operational Overhead**: Need to manage PostgreSQL maintenance and tuning
+  - **Limited Tooling**: Less specialized tooling compared to purpose-built vector DBs
+
 ### **Choosing the Right Vector Database**
 
 #### **Decision Matrix**
 
-| **Factor** | **FAISS** | **Pinecone** | **ChromaDB** | **Azure AI Search** | **AWS Elasticsearch** |
-|---|---|---|---|---|---|
-| **Setup Complexity** | High | Low | Medium | High | Medium |
-| **Cost** | Free | Pay-per-use | Free | High | Variable |
-| **Performance** | Excellent | Excellent | Good | Very Good | Good |
-| **Scalability** | Manual | Automatic | Manual | Automatic | Semi-automatic |
-| **Enterprise Features** | None | Some | None | Extensive | Extensive |
-| **Multi-modal Support** | No | Limited | No | Yes | Limited |
-| **Analytics** | No | Limited | No | Yes | Excellent |
+| **Factor** | **FAISS** | **Pinecone** | **ChromaDB** | **Azure AI Search** | **AWS Elasticsearch** | **PGVector** |
+|---|---|---|---|---|---|---|
+| **Setup Complexity** | High | Low | Medium | High | Medium | Medium |
+| **Cost** | Free | Pay-per-use | Free | High | Variable | Low |
+| **Performance** | Excellent | Excellent | Good | Very Good | Good | Good |
+| **Scalability** | Manual | Automatic | Manual | Automatic | Semi-automatic | Manual |
+| **Enterprise Features** | None | Some | None | Extensive | Extensive | Some |
+| **Multi-modal Support** | No | Limited | No | Yes | Limited | No |
+| **Analytics** | No | Limited | No | Yes | Excellent | Limited |
 
 #### **Use Case Recommendations**
 
@@ -541,6 +1258,14 @@ CHUNK_OVERLAP=80
 - Require complex aggregations and reporting
 - Want mature, battle-tested search technology
 - Need multi-tenancy support
+
+**Choose PGVector when**:
+- Already using PostgreSQL as primary database
+- Need to combine vector search with relational data
+- Want cost-effective solution with existing infrastructure
+- Require ACID compliance and transactional consistency
+- Prefer self-hosted solutions
+- Have existing PostgreSQL expertise in your team
 
 ## Development
 

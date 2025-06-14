@@ -388,40 +388,106 @@ def get_common_rate_limits() -> Dict[str, Dict[str, Any]]:
         Dictionary with service names as keys and rate limit configs as values
     """
     return {
-        'openai_gpt4': {
+        # OpenAI Embedding Models
+        'openai_embeddings_tier1': {
             'requests_per_minute': 500,
-            'tokens_per_minute': 10000,
+            'tokens_per_minute': 350000,
             'strategy': 'sliding_window',
-            'max_burst_requests': 50
+            'max_burst_requests': 100,
+            'description': 'OpenAI Tier 1 embedding limits'
         },
-        'openai_gpt35_turbo': {
-            'requests_per_minute': 3500,
-            'tokens_per_minute': 90000,
+        'openai_embeddings_tier2': {
+            'requests_per_minute': 5000,
+            'tokens_per_minute': 2000000,
             'strategy': 'sliding_window',
-            'max_burst_requests': 100
+            'max_burst_requests': 500,
+            'description': 'OpenAI Tier 2 embedding limits'
         },
+        'openai_embeddings_tier3': {
+            'requests_per_minute': 5000,
+            'tokens_per_minute': 5000000,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 1000,
+            'description': 'OpenAI Tier 3 embedding limits'
+        },
+        
+        # Azure OpenAI
         'azure_openai_standard': {
             'requests_per_minute': 120,
-            'tokens_per_minute': 6000,
+            'tokens_per_minute': 240000,
             'strategy': 'sliding_window',
-            'max_burst_requests': 20
+            'max_burst_requests': 20,
+            'description': 'Azure OpenAI Standard deployment'
         },
-        'anthropic_claude': {
+        'azure_openai_provisioned': {
+            'requests_per_minute': 6000,
+            'tokens_per_minute': 2000000,
+            'strategy': 'adaptive',
+            'max_burst_requests': 1000,
+            'description': 'Azure OpenAI Provisioned deployment'
+        },
+        
+        # AWS Bedrock
+        'aws_bedrock_titan': {
+            'requests_per_minute': 2000,
+            'tokens_per_minute': 400000,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 200,
+            'description': 'AWS Bedrock Titan embedding limits'
+        },
+        'aws_bedrock_cohere': {
             'requests_per_minute': 1000,
-            'tokens_per_minute': 100000,
+            'tokens_per_minute': 200000,
             'strategy': 'sliding_window',
-            'max_burst_requests': 50
+            'max_burst_requests': 100,
+            'description': 'AWS Bedrock Cohere embedding limits'
         },
+        
+        # Google Vertex AI
+        'google_vertex_gecko': {
+            'requests_per_minute': 600,
+            'tokens_per_minute': 1000000,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 60,
+            'description': 'Google Vertex AI Gecko embedding limits'
+        },
+        
+        # Local providers (minimal rate limiting)
+        'local_providers': {
+            'requests_per_minute': 1000,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 100,
+            'description': 'Conservative limits for local providers'
+        },
+        
+        # Vector Database Operations
+        'vector_db_operations': {
+            'requests_per_minute': 300,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 50,
+            'description': 'Rate limits for vector database operations'
+        },
+        
+        # General presets
         'conservative': {
             'requests_per_minute': 60,
-            'tokens_per_minute': 2000,
+            'tokens_per_minute': 50000,
             'strategy': 'sliding_window',
-            'max_burst_requests': 10
+            'max_burst_requests': 10,
+            'description': 'Conservative rate limiting for safety'
+        },
+        'balanced': {
+            'requests_per_minute': 300,
+            'tokens_per_minute': 200000,
+            'strategy': 'sliding_window',
+            'max_burst_requests': 50,
+            'description': 'Balanced rate limiting for most use cases'
         },
         'aggressive': {
             'requests_per_minute': 1000,
-            'tokens_per_minute': 50000,
+            'tokens_per_minute': 1000000,
             'strategy': 'adaptive',
-            'max_burst_requests': 100
+            'max_burst_requests': 200,
+            'description': 'Aggressive rate limiting for high-volume processing'
         }
     }

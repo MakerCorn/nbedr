@@ -41,11 +41,61 @@ class EmbeddingConfig:
     chunking_strategy: str = "semantic"
     chunking_params: Dict[str, Any] = field(default_factory=dict)
     
-    # Embedding Configuration
-    openai_key: Optional[str] = None
+    # Embedding Provider Configuration
+    embedding_provider: str = "openai"  # openai, azure_openai, aws_bedrock, google_vertex, lmstudio, ollama, llamacpp
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
     batch_size_embeddings: int = 100
+    
+    # OpenAI Configuration
+    openai_api_key: Optional[str] = None
+    openai_organization: Optional[str] = None
+    openai_base_url: Optional[str] = None
+    openai_timeout: int = 60
+    openai_max_retries: int = 3
+    
+    # Azure OpenAI Configuration
+    azure_openai_api_key: Optional[str] = None
+    azure_openai_endpoint: Optional[str] = None
+    azure_openai_api_version: str = "2024-02-01"
+    azure_openai_deployment_name: Optional[str] = None
+    azure_openai_deployment_mapping: Dict[str, str] = field(default_factory=dict)
+    azure_openai_timeout: int = 60
+    azure_openai_max_retries: int = 3
+    
+    # AWS Bedrock Configuration
+    aws_bedrock_region: str = "us-east-1"
+    aws_bedrock_access_key_id: Optional[str] = None
+    aws_bedrock_secret_access_key: Optional[str] = None
+    aws_bedrock_session_token: Optional[str] = None
+    aws_bedrock_profile_name: Optional[str] = None
+    aws_bedrock_role_arn: Optional[str] = None
+    aws_bedrock_timeout: int = 60
+    
+    # Google Vertex AI Configuration
+    google_vertex_project_id: Optional[str] = None
+    google_vertex_location: str = "us-central1"
+    google_vertex_credentials_path: Optional[str] = None
+    google_vertex_timeout: int = 60
+    
+    # LMStudio Configuration
+    lmstudio_base_url: str = "http://localhost:1234"
+    lmstudio_api_key: Optional[str] = None
+    lmstudio_timeout: int = 60
+    lmstudio_verify_ssl: bool = True
+    
+    # Ollama Configuration
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_timeout: int = 120
+    ollama_verify_ssl: bool = True
+    
+    # Llama.cpp Configuration
+    llamacpp_base_url: str = "http://localhost:8000"
+    llamacpp_api_key: Optional[str] = None
+    llamacpp_model_name: str = "unknown"
+    llamacpp_timeout: int = 120
+    llamacpp_verify_ssl: bool = True
+    llamacpp_dimensions: Optional[int] = None
     
     # Vector Database Configuration
     # TODO: Add vector database configurations
@@ -79,6 +129,14 @@ class EmbeddingConfig:
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
     
+    # PGVector Configuration
+    pgvector_host: str = "localhost"
+    pgvector_port: int = 5432
+    pgvector_database: str = "vectordb"
+    pgvector_user: str = "postgres"
+    pgvector_password: Optional[str] = None
+    pgvector_table_name: str = "rag_embeddings"
+    
     # Azure Configuration
     use_azure_identity: bool = False
     azure_openai_enabled: bool = False
@@ -88,18 +146,39 @@ class EmbeddingConfig:
     embed_workers: int = 1
     pace: bool = True
     
-    # Rate Limiting Configuration
+    # Rate Limiting Configuration for Embedding Providers
     rate_limit_enabled: bool = False
-    rate_limit_strategy: str = "sliding_window"
+    rate_limit_strategy: str = "sliding_window"  # fixed_window, sliding_window, token_bucket, adaptive
     rate_limit_requests_per_minute: Optional[int] = None
     rate_limit_requests_per_hour: Optional[int] = None
     rate_limit_tokens_per_minute: Optional[int] = None
     rate_limit_tokens_per_hour: Optional[int] = None
     rate_limit_max_burst: Optional[int] = None
     rate_limit_burst_window: float = 60.0
+    rate_limit_target_response_time: float = 2.0
+    rate_limit_max_response_time: float = 10.0
+    rate_limit_adaptation_factor: float = 0.1
     rate_limit_max_retries: int = 3
     rate_limit_base_delay: float = 1.0
+    rate_limit_max_retry_delay: float = 60.0
+    rate_limit_exponential_backoff: bool = True
+    rate_limit_jitter: bool = True
+    rate_limit_retry_on_rate_limit: bool = True
+    rate_limit_retry_on_server_error: bool = True
+    rate_limit_fail_fast_on_auth_error: bool = True
     rate_limit_preset: Optional[str] = None
+    
+    # Vector Store Rate Limiting Configuration
+    vector_store_rate_limit_enabled: bool = False
+    vector_store_rate_limit_strategy: str = "sliding_window"
+    vector_store_rate_limit_requests_per_minute: Optional[int] = None
+    vector_store_rate_limit_requests_per_hour: Optional[int] = None
+    vector_store_rate_limit_max_burst: Optional[int] = None
+    vector_store_rate_limit_burst_window: float = 60.0
+    vector_store_rate_limit_target_response_time: float = 1.0
+    vector_store_rate_limit_max_response_time: float = 5.0
+    vector_store_rate_limit_max_retries: int = 3
+    vector_store_rate_limit_base_delay: float = 0.5
     
     @classmethod
     def from_env(cls, env_file: Optional[str] = None) -> 'EmbeddingConfig':
@@ -160,11 +239,69 @@ class EmbeddingConfig:
             except json.JSONDecodeError as e:
                 logger.warning(f"Failed to parse EMBEDDING_CHUNKING_PARAMS: {e}")
         
-        # Embedding Configuration
-        config.openai_key = os.getenv('OPENAI_API_KEY') or os.getenv('OPENAI_KEY')
+        # Embedding Provider Configuration
+        config.embedding_provider = os.getenv('EMBEDDING_PROVIDER', config.embedding_provider)
         config.embedding_model = os.getenv('EMBEDDING_MODEL', config.embedding_model)
         config.embedding_dimensions = int(os.getenv('EMBEDDING_DIMENSIONS', config.embedding_dimensions))
         config.batch_size_embeddings = int(os.getenv('EMBEDDING_BATCH_SIZE', config.batch_size_embeddings))
+        
+        # OpenAI Configuration
+        config.openai_api_key = os.getenv('OPENAI_API_KEY') or os.getenv('OPENAI_KEY')
+        config.openai_organization = os.getenv('OPENAI_ORGANIZATION')
+        config.openai_base_url = os.getenv('OPENAI_BASE_URL')
+        config.openai_timeout = int(os.getenv('OPENAI_TIMEOUT', config.openai_timeout))
+        config.openai_max_retries = int(os.getenv('OPENAI_MAX_RETRIES', config.openai_max_retries))
+        
+        # Azure OpenAI Configuration
+        config.azure_openai_api_key = os.getenv('AZURE_OPENAI_API_KEY')
+        config.azure_openai_endpoint = os.getenv('AZURE_OPENAI_ENDPOINT')
+        config.azure_openai_api_version = os.getenv('AZURE_OPENAI_API_VERSION', config.azure_openai_api_version)
+        config.azure_openai_deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
+        config.azure_openai_timeout = int(os.getenv('AZURE_OPENAI_TIMEOUT', config.azure_openai_timeout))
+        config.azure_openai_max_retries = int(os.getenv('AZURE_OPENAI_MAX_RETRIES', config.azure_openai_max_retries))
+        
+        # Parse Azure OpenAI deployment mapping from JSON
+        deployment_mapping_str = os.getenv('AZURE_OPENAI_DEPLOYMENT_MAPPING')
+        if deployment_mapping_str:
+            try:
+                config.azure_openai_deployment_mapping = json.loads(deployment_mapping_str)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse AZURE_OPENAI_DEPLOYMENT_MAPPING: {e}")
+        
+        # AWS Bedrock Configuration
+        config.aws_bedrock_region = os.getenv('AWS_BEDROCK_REGION', config.aws_bedrock_region)
+        config.aws_bedrock_access_key_id = os.getenv('AWS_BEDROCK_ACCESS_KEY_ID') or os.getenv('AWS_ACCESS_KEY_ID')
+        config.aws_bedrock_secret_access_key = os.getenv('AWS_BEDROCK_SECRET_ACCESS_KEY') or os.getenv('AWS_SECRET_ACCESS_KEY')
+        config.aws_bedrock_session_token = os.getenv('AWS_BEDROCK_SESSION_TOKEN') or os.getenv('AWS_SESSION_TOKEN')
+        config.aws_bedrock_profile_name = os.getenv('AWS_BEDROCK_PROFILE_NAME') or os.getenv('AWS_PROFILE')
+        config.aws_bedrock_role_arn = os.getenv('AWS_BEDROCK_ROLE_ARN')
+        config.aws_bedrock_timeout = int(os.getenv('AWS_BEDROCK_TIMEOUT', config.aws_bedrock_timeout))
+        
+        # Google Vertex AI Configuration
+        config.google_vertex_project_id = os.getenv('GOOGLE_VERTEX_PROJECT_ID') or os.getenv('GOOGLE_CLOUD_PROJECT')
+        config.google_vertex_location = os.getenv('GOOGLE_VERTEX_LOCATION', config.google_vertex_location)
+        config.google_vertex_credentials_path = os.getenv('GOOGLE_VERTEX_CREDENTIALS_PATH') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        config.google_vertex_timeout = int(os.getenv('GOOGLE_VERTEX_TIMEOUT', config.google_vertex_timeout))
+        
+        # LMStudio Configuration
+        config.lmstudio_base_url = os.getenv('LMSTUDIO_BASE_URL', config.lmstudio_base_url)
+        config.lmstudio_api_key = os.getenv('LMSTUDIO_API_KEY')
+        config.lmstudio_timeout = int(os.getenv('LMSTUDIO_TIMEOUT', config.lmstudio_timeout))
+        config.lmstudio_verify_ssl = os.getenv('LMSTUDIO_VERIFY_SSL', 'true').lower() in ('true', '1', 'yes')
+        
+        # Ollama Configuration
+        config.ollama_base_url = os.getenv('OLLAMA_BASE_URL', config.ollama_base_url)
+        config.ollama_timeout = int(os.getenv('OLLAMA_TIMEOUT', config.ollama_timeout))
+        config.ollama_verify_ssl = os.getenv('OLLAMA_VERIFY_SSL', 'true').lower() in ('true', '1', 'yes')
+        
+        # Llama.cpp Configuration
+        config.llamacpp_base_url = os.getenv('LLAMACPP_BASE_URL', config.llamacpp_base_url)
+        config.llamacpp_api_key = os.getenv('LLAMACPP_API_KEY')
+        config.llamacpp_model_name = os.getenv('LLAMACPP_MODEL_NAME', config.llamacpp_model_name)
+        config.llamacpp_timeout = int(os.getenv('LLAMACPP_TIMEOUT', config.llamacpp_timeout))
+        config.llamacpp_verify_ssl = os.getenv('LLAMACPP_VERIFY_SSL', 'true').lower() in ('true', '1', 'yes')
+        if os.getenv('LLAMACPP_DIMENSIONS'):
+            config.llamacpp_dimensions = int(os.getenv('LLAMACPP_DIMENSIONS'))
         
         # Vector Database Configuration
         config.vector_db_type = os.getenv('VECTOR_DB_TYPE', config.vector_db_type)
@@ -204,6 +341,14 @@ class EmbeddingConfig:
         config.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
         config.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         
+        # PGVector Configuration
+        config.pgvector_host = os.getenv('PGVECTOR_HOST', config.pgvector_host)
+        config.pgvector_port = int(os.getenv('PGVECTOR_PORT', config.pgvector_port))
+        config.pgvector_database = os.getenv('PGVECTOR_DATABASE', config.pgvector_database)
+        config.pgvector_user = os.getenv('PGVECTOR_USER', config.pgvector_user)
+        config.pgvector_password = os.getenv('PGVECTOR_PASSWORD')
+        config.pgvector_table_name = os.getenv('PGVECTOR_TABLE_NAME', config.pgvector_table_name)
+        
         # Azure Configuration
         config.use_azure_identity = os.getenv('EMBEDDING_USE_AZURE_IDENTITY', 'false').lower() in ('true', '1', 'yes')
         config.azure_openai_enabled = os.getenv('AZURE_OPENAI_ENABLED', 'false').lower() in ('true', '1', 'yes')
@@ -213,26 +358,52 @@ class EmbeddingConfig:
         config.embed_workers = int(os.getenv('EMBEDDING_EMBED_WORKERS', config.embed_workers))
         config.pace = os.getenv('EMBEDDING_PACE', 'true').lower() in ('true', '1', 'yes')
         
-        # Rate Limiting Configuration
-        config.rate_limit_enabled = os.getenv('EMBEDDING_RATE_LIMIT_ENABLED', 'false').lower() in ('true', '1', 'yes')
-        config.rate_limit_strategy = os.getenv('EMBEDDING_RATE_LIMIT_STRATEGY', config.rate_limit_strategy)
-        config.rate_limit_preset = os.getenv('EMBEDDING_RATE_LIMIT_PRESET')
+        # Rate Limiting Configuration for Embedding Providers
+        config.rate_limit_enabled = os.getenv('RATE_LIMIT_ENABLED', 'false').lower() in ('true', '1', 'yes')
+        config.rate_limit_strategy = os.getenv('RATE_LIMIT_STRATEGY', config.rate_limit_strategy)
+        config.rate_limit_preset = os.getenv('RATE_LIMIT_PRESET')
         
-        # Parse numeric rate limits
-        if os.getenv('EMBEDDING_RATE_LIMIT_REQUESTS_PER_MINUTE'):
-            config.rate_limit_requests_per_minute = int(os.getenv('EMBEDDING_RATE_LIMIT_REQUESTS_PER_MINUTE'))
-        if os.getenv('EMBEDDING_RATE_LIMIT_REQUESTS_PER_HOUR'):
-            config.rate_limit_requests_per_hour = int(os.getenv('EMBEDDING_RATE_LIMIT_REQUESTS_PER_HOUR'))
-        if os.getenv('EMBEDDING_RATE_LIMIT_TOKENS_PER_MINUTE'):
-            config.rate_limit_tokens_per_minute = int(os.getenv('EMBEDDING_RATE_LIMIT_TOKENS_PER_MINUTE'))
-        if os.getenv('EMBEDDING_RATE_LIMIT_TOKENS_PER_HOUR'):
-            config.rate_limit_tokens_per_hour = int(os.getenv('EMBEDDING_RATE_LIMIT_TOKENS_PER_HOUR'))
-        if os.getenv('EMBEDDING_RATE_LIMIT_MAX_BURST'):
-            config.rate_limit_max_burst = int(os.getenv('EMBEDDING_RATE_LIMIT_MAX_BURST'))
+        # Parse numeric rate limits for embedding providers
+        if os.getenv('RATE_LIMIT_REQUESTS_PER_MINUTE'):
+            config.rate_limit_requests_per_minute = int(os.getenv('RATE_LIMIT_REQUESTS_PER_MINUTE'))
+        if os.getenv('RATE_LIMIT_REQUESTS_PER_HOUR'):
+            config.rate_limit_requests_per_hour = int(os.getenv('RATE_LIMIT_REQUESTS_PER_HOUR'))
+        if os.getenv('RATE_LIMIT_TOKENS_PER_MINUTE'):
+            config.rate_limit_tokens_per_minute = int(os.getenv('RATE_LIMIT_TOKENS_PER_MINUTE'))
+        if os.getenv('RATE_LIMIT_TOKENS_PER_HOUR'):
+            config.rate_limit_tokens_per_hour = int(os.getenv('RATE_LIMIT_TOKENS_PER_HOUR'))
+        if os.getenv('RATE_LIMIT_MAX_BURST'):
+            config.rate_limit_max_burst = int(os.getenv('RATE_LIMIT_MAX_BURST'))
         
-        config.rate_limit_burst_window = float(os.getenv('EMBEDDING_RATE_LIMIT_BURST_WINDOW', config.rate_limit_burst_window))
-        config.rate_limit_max_retries = int(os.getenv('EMBEDDING_RATE_LIMIT_MAX_RETRIES', config.rate_limit_max_retries))
-        config.rate_limit_base_delay = float(os.getenv('EMBEDDING_RATE_LIMIT_BASE_DELAY', config.rate_limit_base_delay))
+        config.rate_limit_burst_window = float(os.getenv('RATE_LIMIT_BURST_WINDOW', config.rate_limit_burst_window))
+        config.rate_limit_target_response_time = float(os.getenv('RATE_LIMIT_TARGET_RESPONSE_TIME', config.rate_limit_target_response_time))
+        config.rate_limit_max_response_time = float(os.getenv('RATE_LIMIT_MAX_RESPONSE_TIME', config.rate_limit_max_response_time))
+        config.rate_limit_adaptation_factor = float(os.getenv('RATE_LIMIT_ADAPTATION_FACTOR', config.rate_limit_adaptation_factor))
+        config.rate_limit_max_retries = int(os.getenv('RATE_LIMIT_MAX_RETRIES', config.rate_limit_max_retries))
+        config.rate_limit_base_delay = float(os.getenv('RATE_LIMIT_BASE_DELAY', config.rate_limit_base_delay))
+        config.rate_limit_max_retry_delay = float(os.getenv('RATE_LIMIT_MAX_RETRY_DELAY', config.rate_limit_max_retry_delay))
+        config.rate_limit_exponential_backoff = os.getenv('RATE_LIMIT_EXPONENTIAL_BACKOFF', 'true').lower() in ('true', '1', 'yes')
+        config.rate_limit_jitter = os.getenv('RATE_LIMIT_JITTER', 'true').lower() in ('true', '1', 'yes')
+        config.rate_limit_retry_on_rate_limit = os.getenv('RATE_LIMIT_RETRY_ON_RATE_LIMIT', 'true').lower() in ('true', '1', 'yes')
+        config.rate_limit_retry_on_server_error = os.getenv('RATE_LIMIT_RETRY_ON_SERVER_ERROR', 'true').lower() in ('true', '1', 'yes')
+        config.rate_limit_fail_fast_on_auth_error = os.getenv('RATE_LIMIT_FAIL_FAST_ON_AUTH_ERROR', 'true').lower() in ('true', '1', 'yes')
+        
+        # Vector Store Rate Limiting Configuration
+        config.vector_store_rate_limit_enabled = os.getenv('VECTOR_STORE_RATE_LIMIT_ENABLED', 'false').lower() in ('true', '1', 'yes')
+        config.vector_store_rate_limit_strategy = os.getenv('VECTOR_STORE_RATE_LIMIT_STRATEGY', config.vector_store_rate_limit_strategy)
+        
+        if os.getenv('VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE'):
+            config.vector_store_rate_limit_requests_per_minute = int(os.getenv('VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE'))
+        if os.getenv('VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_HOUR'):
+            config.vector_store_rate_limit_requests_per_hour = int(os.getenv('VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_HOUR'))
+        if os.getenv('VECTOR_STORE_RATE_LIMIT_MAX_BURST'):
+            config.vector_store_rate_limit_max_burst = int(os.getenv('VECTOR_STORE_RATE_LIMIT_MAX_BURST'))
+        
+        config.vector_store_rate_limit_burst_window = float(os.getenv('VECTOR_STORE_RATE_LIMIT_BURST_WINDOW', config.vector_store_rate_limit_burst_window))
+        config.vector_store_rate_limit_target_response_time = float(os.getenv('VECTOR_STORE_RATE_LIMIT_TARGET_RESPONSE_TIME', config.vector_store_rate_limit_target_response_time))
+        config.vector_store_rate_limit_max_response_time = float(os.getenv('VECTOR_STORE_RATE_LIMIT_MAX_RESPONSE_TIME', config.vector_store_rate_limit_max_response_time))
+        config.vector_store_rate_limit_max_retries = int(os.getenv('VECTOR_STORE_RATE_LIMIT_MAX_RETRIES', config.vector_store_rate_limit_max_retries))
+        config.vector_store_rate_limit_base_delay = float(os.getenv('VECTOR_STORE_RATE_LIMIT_BASE_DELAY', config.vector_store_rate_limit_base_delay))
         
         return config
     
@@ -260,8 +431,44 @@ class EmbeddingConfig:
         if self.chunking_strategy not in ["semantic", "fixed", "sentence"]:
             raise ValueError(f"Invalid chunking strategy: {self.chunking_strategy}")
         
+        # Validate embedding provider
+        valid_providers = ["openai", "azure_openai", "aws_bedrock", "google_vertex", "lmstudio", "ollama", "llamacpp"]
+        if self.embedding_provider not in valid_providers:
+            raise ValueError(f"Invalid embedding provider: {self.embedding_provider}. Must be one of: {valid_providers}")
+        
+        # Validate embedding provider specific requirements
+        if self.embedding_provider == "openai":
+            if not self.openai_api_key:
+                raise ValueError("OpenAI API key is required for OpenAI provider")
+        
+        elif self.embedding_provider == "azure_openai":
+            if not self.azure_openai_api_key:
+                raise ValueError("Azure OpenAI API key is required for Azure OpenAI provider")
+            if not self.azure_openai_endpoint:
+                raise ValueError("Azure OpenAI endpoint is required for Azure OpenAI provider")
+        
+        elif self.embedding_provider == "aws_bedrock":
+            # AWS credentials can come from multiple sources, so we don't enforce them here
+            pass
+        
+        elif self.embedding_provider == "google_vertex":
+            if not self.google_vertex_project_id:
+                raise ValueError("Google Cloud project ID is required for Vertex AI provider")
+        
+        elif self.embedding_provider == "lmstudio":
+            # LMStudio only requires base URL, which has a default
+            pass
+        
+        elif self.embedding_provider == "ollama":
+            # Ollama only requires base URL, which has a default
+            pass
+        
+        elif self.embedding_provider == "llamacpp":
+            # Llama.cpp only requires base URL, which has a default
+            pass
+        
         # Validate vector database type
-        if self.vector_db_type not in ["faiss", "pinecone", "chroma"]:
+        if self.vector_db_type not in ["faiss", "pinecone", "chroma", "azure_ai_search", "aws_elasticsearch", "pgvector"]:
             raise ValueError(f"Invalid vector database type: {self.vector_db_type}")
         
         # Validate vector database specific requirements
@@ -270,6 +477,9 @@ class EmbeddingConfig:
                 raise ValueError("Pinecone API key is required for Pinecone vector database")
             if not self.pinecone_environment:
                 raise ValueError("Pinecone environment is required for Pinecone vector database")
+        elif self.vector_db_type == "pgvector":
+            if not self.pgvector_password:
+                raise ValueError("PostgreSQL password is required for pgvector database")
         
         # Validate source file size limit
         if self.source_max_file_size <= 0:
@@ -284,11 +494,65 @@ class EmbeddingConfig:
         if self.batch_size_embeddings <= 0:
             raise ValueError("batch_size_embeddings must be positive")
         
-        # Allow demo mode with mock API key
-        if not self.openai_key and not self.use_azure_identity:
-            raise ValueError("OpenAI API key is required unless using Azure identity")
-        elif self.openai_key == "demo_key_for_testing":
-            pass  # Allow demo mode
+        # Skip API key validation for local providers or demo mode
+        demo_key_values = ["demo_key_for_testing", "test", "mock"]
+        local_providers = ["lmstudio", "ollama", "llamacpp"]
+        
+        if self.embedding_provider not in local_providers:
+            # For cloud providers, check if we have appropriate credentials
+            has_credentials = False
+            
+            if self.embedding_provider == "openai" and self.openai_api_key:
+                has_credentials = True
+            elif self.embedding_provider == "azure_openai" and self.azure_openai_api_key:
+                has_credentials = True
+            elif self.embedding_provider == "aws_bedrock":
+                # AWS can use IAM roles, so don't enforce explicit keys
+                has_credentials = True
+            elif self.embedding_provider == "google_vertex":
+                # Google can use default credentials, so don't enforce explicit path
+                has_credentials = True
+            
+            # Check for demo/test mode
+            if (self.openai_api_key in demo_key_values or 
+                self.azure_openai_api_key in demo_key_values):
+                has_credentials = True
+            
+            if not has_credentials and not self.use_azure_identity:
+                raise ValueError(f"Credentials required for {self.embedding_provider} provider")
+        
+        # Validate rate limiting configuration
+        valid_strategies = ["fixed_window", "sliding_window", "token_bucket", "adaptive"]
+        if self.rate_limit_strategy not in valid_strategies:
+            raise ValueError(f"Invalid rate limiting strategy: {self.rate_limit_strategy}. Must be one of: {valid_strategies}")
+        
+        if self.vector_store_rate_limit_strategy not in valid_strategies:
+            raise ValueError(f"Invalid vector store rate limiting strategy: {self.vector_store_rate_limit_strategy}. Must be one of: {valid_strategies}")
+        
+        # Validate rate limiting numeric values
+        if self.rate_limit_enabled:
+            if self.rate_limit_requests_per_minute is not None and self.rate_limit_requests_per_minute <= 0:
+                raise ValueError("rate_limit_requests_per_minute must be positive")
+            if self.rate_limit_tokens_per_minute is not None and self.rate_limit_tokens_per_minute <= 0:
+                raise ValueError("rate_limit_tokens_per_minute must be positive")
+            if self.rate_limit_max_burst is not None and self.rate_limit_max_burst <= 0:
+                raise ValueError("rate_limit_max_burst must be positive")
+        
+        if self.vector_store_rate_limit_enabled:
+            if self.vector_store_rate_limit_requests_per_minute is not None and self.vector_store_rate_limit_requests_per_minute <= 0:
+                raise ValueError("vector_store_rate_limit_requests_per_minute must be positive")
+            if self.vector_store_rate_limit_max_burst is not None and self.vector_store_rate_limit_max_burst <= 0:
+                raise ValueError("vector_store_rate_limit_max_burst must be positive")
+        
+        # Validate adaptive rate limiting parameters
+        if self.rate_limit_adaptation_factor < 0.0 or self.rate_limit_adaptation_factor > 1.0:
+            raise ValueError("rate_limit_adaptation_factor must be between 0.0 and 1.0")
+        
+        if self.rate_limit_target_response_time <= 0:
+            raise ValueError("rate_limit_target_response_time must be positive")
+        
+        if self.rate_limit_max_response_time <= self.rate_limit_target_response_time:
+            raise ValueError("rate_limit_max_response_time must be greater than rate_limit_target_response_time")
 
 def get_config(env_file: Optional[str] = None) -> EmbeddingConfig:
     """Get validated configuration instance."""
