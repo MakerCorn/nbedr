@@ -7,7 +7,7 @@ name = "rag-embeddings-db"
 version = "1.0.0"
 description = "nBedR - RAG Embedding Toolkit - Tools for creating and managing embedding databases for Retrieval Augmented Generation"
 readme = "README.md"
-license = "GPLV3"
+license = "GPL-3.0-or-later"
 authors = [
     {name = "RAG Embeddings Team"}
 ]
