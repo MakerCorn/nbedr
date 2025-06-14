@@ -1,0 +1,13 @@
+- This application's name is NBEDR a shortened play on "Embedder" and is built to create embedding databases for RAG chatbots
+- The goal of this application is to make it easy for novice users to process large volumes of documents for RAG embedding
+- Use best practices when generating code
+- Use shared classes to avoid redundant code
+- Use environment variables or command line parameters to set configuration options
+- Always make it visually appealing
+- Always update the change log after making changes
+- Always update the readme after adding new functionality
+- Always document your code and keep it organized
+- Provide mermaid diagrams where appropriate in documents
+- Implement 12-factor app principles whenever possible
+- Create unit test when needed to ensure reliability and error handling and place the files in a test folder
+- 
