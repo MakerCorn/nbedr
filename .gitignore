@@ -195,3 +195,5 @@ cython_debug/
 
 CLAUDE.md
 .claude/
+
+.DS_STORE
