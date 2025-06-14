@@ -610,7 +610,8 @@ class EmbeddingConfig:
 
         if self.vector_store_rate_limit_strategy not in valid_strategies:
             raise ValueError(
-                f"Invalid vector store rate limiting strategy: {self.vector_store_rate_limit_strategy}. Must be one of: {valid_strategies}"
+                f"Invalid vector store rate limiting strategy: {self.vector_store_rate_limit_strategy}. "
+                f"Must be one of: {valid_strategies}"
             )
 
         # Validate rate limiting numeric values

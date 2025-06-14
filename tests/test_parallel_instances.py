@@ -16,8 +16,9 @@ from pathlib import Path
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from core.config import EmbeddingConfig
-from core.utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator
+# Import after path manipulation
+from core.config import EmbeddingConfig  # noqa: E402
+from core.utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator  # noqa: E402
 
 
 def create_test_config(instance_id: int, temp_dir: Path) -> Path:
@@ -225,7 +226,7 @@ def test_parallel_execution():
         successful_instances = [r for r in results if r["success"]]
         failed_instances = [r for r in results if not r["success"]]
 
-        print(f"\n📊 Parallel Execution Results:")
+        print("\n📊 Parallel Execution Results:")
         print(f"Total Instances: {num_instances}")
         print(f"Successful: {len(successful_instances)}")
         print(f"Failed: {len(failed_instances)}")
@@ -237,7 +238,7 @@ def test_parallel_execution():
 
         # Show details for failed instances
         if failed_instances:
-            print(f"\n❌ Failed Instances:")
+            print("\n❌ Failed Instances:")
             for result in failed_instances:
                 print(f"  Instance {result['instance_id']}:")
                 print(f"    Return Code: {result['returncode']}")

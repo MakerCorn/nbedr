@@ -111,7 +111,7 @@ class InputSourceFactory:
             source_class: Source implementation class
         """
         if not issubclass(source_class, BaseInputSource):
-            raise ValueError(f"Source class must inherit from BaseInputSource")
+            raise ValueError("Source class must inherit from BaseInputSource")
 
         cls._source_types[name.lower()] = source_class
 

@@ -21,7 +21,8 @@ def is_azure() -> bool:
     """Check if the environment is configured for Azure OpenAI.
 
     Returns:
-        bool: True if the AZURE_OPENAI_ENABLED environment variable is set to '1' or 'true' (case-insensitive), False otherwise.
+        bool: True if the AZURE_OPENAI_ENABLED environment variable is set to '1' or 'true'
+        (case-insensitive), False otherwise.
     """
     value = environ.get("AZURE_OPENAI_ENABLED", "0").lower()
     azure = value in ("1", "true", "yes")
@@ -29,7 +30,8 @@ def is_azure() -> bool:
         logger.debug("Azure OpenAI support is enabled via AZURE_OPENAI_ENABLED.")
     else:
         logger.debug(
-            "Azure OpenAI support is disabled (AZURE_OPENAI_ENABLED not set or false). Using OpenAI environment variables."
+            "Azure OpenAI support is disabled (AZURE_OPENAI_ENABLED not set or false). "
+            "Using OpenAI environment variables."
         )
     return azure
 

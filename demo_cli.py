@@ -67,7 +67,7 @@ Examples:
 
 def demo_create_embeddings(args):
     """Demo create embeddings command."""
-    print(f"\n🔧 Creating Embeddings (DEMO MODE)")
+    print("\n🔧 Creating Embeddings (DEMO MODE)")
     print("=" * 50)
     print(f"Source Type: {args.source_type}")
     print(f"Data Path: {args.datapath}")
@@ -98,7 +98,7 @@ def demo_create_embeddings(args):
 
 def demo_search(args):
     """Demo search command."""
-    print(f"\n🔍 Searching (DEMO MODE)")
+    print("\n🔍 Searching (DEMO MODE)")
     print("=" * 50)
     print(f"Query: '{args.query}'")
     print(f"Top-K: {args.top_k}")
@@ -112,7 +112,7 @@ def demo_search(args):
 
 def demo_list_sources(args):
     """Demo list sources command."""
-    print(f"\n📁 Available Sources (DEMO MODE)")
+    print("\n📁 Available Sources (DEMO MODE)")
     print("=" * 50)
     print(f"Filter: {args.source_type}")
 
@@ -132,7 +132,7 @@ def demo_list_sources(args):
 
 def demo_status(args):
     """Demo status command."""
-    print(f"\n📊 System Status (DEMO MODE)")
+    print("\n📊 System Status (DEMO MODE)")
     print("=" * 50)
     print("✅ Configuration: Valid")
     print("✅ CLI Interface: Working")

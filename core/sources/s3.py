@@ -163,7 +163,7 @@ class S3InputSource(BaseInputSource):
 
                 # Safety check to prevent infinite loops
                 if len(documents) > 10000:  # Configurable limit
-                    self.logger.warning(f"Limiting to first 10000 objects from S3")
+                    self.logger.warning("Limiting to first 10000 objects from S3")
                     break
 
         except Exception as e:

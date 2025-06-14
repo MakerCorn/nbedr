@@ -66,7 +66,6 @@ def _get_token(token_key, resource) -> Optional[str]:
         return None
 
     now = int(time.time())
-    global tokens
     token = tokens.get(token_key)
     try:
         if token is None or now > token.expires_on - 60:
@@ -74,11 +73,13 @@ def _get_token(token_key, resource) -> Optional[str]:
             token = credential.get_token(resource)
             tokens[token_key] = token
             log.debug(
-                f"Got new Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
+                f"Got new Azure AD token for {resource} "
+                f"(expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
             )
         else:
             log.debug(
-                f"Using cached Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
+                f"Using cached Azure AD token for {resource} "
+                f"(expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
             )
         return token.token
     except CredentialUnavailableError as e:
