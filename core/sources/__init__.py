@@ -6,18 +6,18 @@ including local files, S3 buckets, and SharePoint sites.
 """
 
 from .base import BaseInputSource, InputSourceConfig, SourceDocument, SourceValidationError
+from .factory import InputSourceFactory
 from .local import LocalInputSource
 from .s3 import S3InputSource
 from .sharepoint import SharePointInputSource
-from .factory import InputSourceFactory
 
 __all__ = [
     "BaseInputSource",
-    "InputSourceConfig", 
+    "InputSourceConfig",
     "SourceDocument",
     "SourceValidationError",
     "LocalInputSource",
-    "S3InputSource", 
+    "S3InputSource",
     "SharePointInputSource",
     "InputSourceFactory",
 ]

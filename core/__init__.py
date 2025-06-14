@@ -14,7 +14,7 @@ from .models import DocumentChunk, EmbeddingBatch, VectorSearchResult
 
 __all__ = [
     "EmbeddingConfig",
-    "DocumentChunk", 
+    "DocumentChunk",
     "EmbeddingBatch",
     "VectorSearchResult",
 ]

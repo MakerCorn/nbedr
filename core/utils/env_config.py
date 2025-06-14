@@ -2,10 +2,8 @@ import contextlib
 import os
 
 # List of environment variables prefixes that are allowed to be used for configuration.
-env_prefix_whitelist = [
-    'OPENAI', 
-    'AZURE_OPENAI'
-]
+env_prefix_whitelist = ["OPENAI", "AZURE_OPENAI"]
+
 
 def read_env_config(use_prefix: str, env: dict = os.environ) -> str:
     """Reads whitelisted environment variables and returns them in a dictionary.
@@ -24,8 +22,9 @@ def read_env_config(use_prefix: str, env: dict = os.environ) -> str:
         read_env_config_prefixed(prefix, config, env)
     return config
 
+
 def read_env_config_prefixed(use_prefix: str, config: dict, env: dict = os.environ) -> str:
-    """Reads whitelisted environment variables prefixed with use_prefix and adds them to the dictionary 
+    """Reads whitelisted environment variables prefixed with use_prefix and adds them to the dictionary
     with use_prefix stripped.
 
     Args:
@@ -40,6 +39,7 @@ def read_env_config_prefixed(use_prefix: str, config: dict, env: dict = os.envir
             if key.startswith(key_prefix):
                 striped_key = key.removeprefix(use_prefix)
                 config[striped_key] = env[key]
+
 
 def format_prefix(prefix: str) -> str:
     """Formats the prefix to be used in the environment variable.
@@ -77,6 +77,7 @@ def set_env(**environ: dict[str, str]):
         os.environ.clear()
         os.environ.update(old_environ)
 
+
 def get_env_variable(key, default=None):
     """Retrieves the value of an environment variable, returning a default if not set.
 
@@ -89,6 +90,7 @@ def get_env_variable(key, default=None):
     """
     return os.environ.get(key, default)
 
+
 def load_env_file(env_path):
     """Loads environment variables from a .env file.
 
@@ -96,4 +98,5 @@ def load_env_file(env_path):
         env_path (str): Path to the .env file.
     """
     from dotenv import load_dotenv
+
     load_dotenv(env_path)

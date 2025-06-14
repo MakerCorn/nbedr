@@ -1,20 +1,23 @@
 """
 Test configuration and fixtures for RAG embedding database tests.
 """
+
 import os
 import tempfile
-import pytest
-from pathlib import Path
-from typing import Dict, Any, List
-from unittest.mock import Mock, MagicMock
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, Mock
+
+import pytest
+
+from core.clients.openai_client import EmbeddingClient
 
 # Import core modules
 from core.config import EmbeddingConfig
 from core.models import DocumentChunk, EmbeddingBatch, VectorDatabaseConfig, VectorDatabaseType
-from core.clients.openai_client import EmbeddingClient
-from core.utils.rate_limiter import RateLimiter, RateLimitConfig, RateLimitStrategy
 from core.services.document_service import DocumentService
+from core.utils.rate_limiter import RateLimitConfig, RateLimiter, RateLimitStrategy
 
 
 @pytest.fixture(scope="session")
@@ -22,18 +25,19 @@ def test_data_dir():
     """Create a temporary directory with test data files."""
     with tempfile.TemporaryDirectory() as temp_dir:
         test_dir = Path(temp_dir)
-        
+
         # Create test PDF content (mock)
         (test_dir / "test.pdf").write_bytes(b"Mock PDF content")
-        
+
         # Create test text file
         (test_dir / "test.txt").write_text("This is a test document.\nIt has multiple lines.\nFor testing purposes.")
-        
+
         # Create test JSON file
         import json
+
         test_json = {"text": "This is JSON content for testing", "metadata": {"type": "test"}}
         (test_dir / "test.json").write_text(json.dumps(test_json))
-        
+
         # Create test API documentation JSON
         api_docs = [
             {
@@ -42,11 +46,11 @@ def test_data_dir():
                 "api_call": "GET /api/test",
                 "api_version": "v1",
                 "api_arguments": {"param1": "value1"},
-                "functionality": "Test API endpoint"
+                "functionality": "Test API endpoint",
             }
         ]
         (test_dir / "api_docs.json").write_text(json.dumps(api_docs))
-        
+
         yield test_dir
 
 
@@ -69,7 +73,7 @@ def sample_config():
         workers=1,
         embed_workers=1,
         pace=False,
-        rate_limit_enabled=False
+        rate_limit_enabled=False,
     )
 
 
@@ -84,7 +88,7 @@ def sample_config_with_env_vars(monkeypatch):
     monkeypatch.setenv("VECTOR_DB_TYPE", "pinecone")
     monkeypatch.setenv("PINECONE_API_KEY", "test_pinecone_key")
     monkeypatch.setenv("PINECONE_ENVIRONMENT", "test-env")
-    
+
     return EmbeddingConfig.from_env()
 
 
@@ -94,7 +98,7 @@ def sample_document_chunk():
     return DocumentChunk.create(
         content="This is a test document chunk with some content for testing.",
         source="/path/to/test/document.txt",
-        metadata={"type": "test", "chunk_index": 0}
+        metadata={"type": "test", "chunk_index": 0},
     )
 
 
@@ -106,7 +110,7 @@ def sample_document_chunks():
         chunk = DocumentChunk.create(
             content=f"This is test chunk number {i+1} with some content.",
             source=f"/path/to/test/document_{i+1}.txt",
-            metadata={"type": "test", "chunk_index": i}
+            metadata={"type": "test", "chunk_index": i},
         )
         chunks.append(chunk)
     return chunks
@@ -124,26 +128,27 @@ def mock_embedding_client():
     client = Mock(spec=EmbeddingClient)
     client.model = "text-embedding-3-small"
     client.azure_enabled = False
-    
+
     # Mock embedding generation
     def mock_generate_embeddings(texts, batch_size=100):
         import random
+
         embeddings = []
         for text in texts:
             random.seed(hash(text) % (2**32))
             embedding = [random.uniform(-1, 1) for _ in range(1536)]
             embeddings.append(embedding)
         return embeddings
-    
+
     client.generate_embeddings.side_effect = mock_generate_embeddings
     client.generate_single_embedding.side_effect = lambda text: mock_generate_embeddings([text])[0]
     client.get_model_info.return_value = {
         "model": "text-embedding-3-small",
         "dimensions": 1536,
         "max_input_tokens": 8191,
-        "azure_enabled": False
+        "azure_enabled": False,
     }
-    
+
     return client
 
 
@@ -157,7 +162,7 @@ def rate_limit_config():
         tokens_per_minute=1000,
         max_burst_requests=10,
         max_retries=3,
-        base_retry_delay=1.0
+        base_retry_delay=1.0,
     )
 
 
@@ -170,16 +175,16 @@ def mock_rate_limiter(rate_limit_config):
     limiter.record_response.return_value = None
     limiter.record_error.return_value = None
     limiter.get_statistics.return_value = {
-        'enabled': True,
-        'strategy': 'sliding_window',
-        'total_requests': 0,
-        'total_tokens': 0,
-        'total_wait_time': 0.0,
-        'rate_limit_hits': 0,
-        'average_response_time': 0.0,
-        'current_rate_limit': 60,
-        'requests_in_last_minute': 0,
-        'tokens_in_last_minute': 0
+        "enabled": True,
+        "strategy": "sliding_window",
+        "total_requests": 0,
+        "total_tokens": 0,
+        "total_wait_time": 0.0,
+        "rate_limit_hits": 0,
+        "average_response_time": 0.0,
+        "current_rate_limit": 60,
+        "requests_in_last_minute": 0,
+        "tokens_in_last_minute": 0,
     }
     return limiter
 
@@ -188,14 +193,12 @@ def mock_rate_limiter(rate_limit_config):
 def mock_openai_client():
     """Create a mock OpenAI client for testing."""
     client = MagicMock()
-    
+
     # Mock embeddings response
     mock_response = MagicMock()
-    mock_response.data = [
-        MagicMock(embedding=[0.1, 0.2, 0.3] * 512)  # 1536 dimensions
-    ]
+    mock_response.data = [MagicMock(embedding=[0.1, 0.2, 0.3] * 512)]  # 1536 dimensions
     client.embeddings.create.return_value = mock_response
-    
+
     return client
 
 
@@ -213,19 +216,19 @@ def vector_db_config():
         connection_params={"index_path": "/tmp/test_index"},
         index_params={"nlist": 100},
         dimension=1536,
-        metric="cosine"
+        metric="cosine",
     )
 
 
 @pytest.fixture
 def temp_file():
     """Create a temporary file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
         f.write("This is temporary test content.")
         temp_path = f.name
-    
+
     yield Path(temp_path)
-    
+
     # Cleanup
     if Path(temp_path).exists():
         Path(temp_path).unlink()
@@ -234,14 +237,15 @@ def temp_file():
 @pytest.fixture
 def temp_json_file():
     """Create a temporary JSON file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
         import json
+
         test_data = {"test_key": "test_value", "nested": {"key": "value"}}
         json.dump(test_data, f)
         temp_path = f.name
-    
+
     yield Path(temp_path)
-    
+
     # Cleanup
     if Path(temp_path).exists():
         Path(temp_path).unlink()
@@ -252,12 +256,20 @@ def clean_environment(monkeypatch):
     """Clean environment variables for testing."""
     # Remove common environment variables that might interfere with tests
     env_vars_to_clean = [
-        'OPENAI_API_KEY', 'OPENAI_KEY', 'AZURE_OPENAI_ENABLED',
-        'EMBEDDING_DATAPATH', 'EMBEDDING_OUTPUT', 'EMBEDDING_CHUNK_SIZE',
-        'EMBEDDING_MODEL', 'VECTOR_DB_TYPE', 'PINECONE_API_KEY',
-        'PINECONE_ENVIRONMENT', 'CHROMA_HOST', 'CHROMA_PORT'
+        "OPENAI_API_KEY",
+        "OPENAI_KEY",
+        "AZURE_OPENAI_ENABLED",
+        "EMBEDDING_DATAPATH",
+        "EMBEDDING_OUTPUT",
+        "EMBEDDING_CHUNK_SIZE",
+        "EMBEDDING_MODEL",
+        "VECTOR_DB_TYPE",
+        "PINECONE_API_KEY",
+        "PINECONE_ENVIRONMENT",
+        "CHROMA_HOST",
+        "CHROMA_PORT",
     ]
-    
+
     for var in env_vars_to_clean:
         monkeypatch.delenv(var, raising=False)
 
@@ -265,20 +277,21 @@ def clean_environment(monkeypatch):
 @pytest.fixture
 def mock_file_operations(monkeypatch):
     """Mock file operations for testing."""
+
     def mock_exists(path):
         return True
-    
+
     def mock_is_file(path):
         return True
-    
+
     def mock_is_dir(path):
         return False
-    
+
     def mock_stat():
         stat_result = MagicMock()
         stat_result.st_size = 1024
         return stat_result
-    
+
     monkeypatch.setattr("pathlib.Path.exists", mock_exists)
     monkeypatch.setattr("pathlib.Path.is_file", mock_is_file)
     monkeypatch.setattr("pathlib.Path.is_dir", mock_is_dir)
@@ -290,6 +303,7 @@ def mock_file_operations(monkeypatch):
 def event_loop():
     """Create an event loop for async tests."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
@@ -340,7 +354,7 @@ TEST_API_DOCS = [
         "api_call": "GET /api/test",
         "api_version": "v1",
         "api_arguments": {"param1": "value1"},
-        "functionality": "Test API endpoint"
+        "functionality": "Test API endpoint",
     },
     {
         "user_name": "test_user2",
@@ -348,8 +362,8 @@ TEST_API_DOCS = [
         "api_call": "POST /api/another",
         "api_version": "v2",
         "api_arguments": {"param2": "value2"},
-        "functionality": "Another test API endpoint"
-    }
+        "functionality": "Another test API endpoint",
+    },
 ]
 
 
@@ -372,7 +386,7 @@ def create_test_config(**overrides):
         "workers": 1,
         "embed_workers": 1,
         "pace": False,
-        "rate_limit_enabled": False
+        "rate_limit_enabled": False,
     }
     defaults.update(overrides)
     return EmbeddingConfig(**defaults)
@@ -383,12 +397,10 @@ def create_test_chunks(count=3, with_embeddings=False):
     chunks = []
     for i in range(count):
         chunk = DocumentChunk.create(
-            content=f"Test chunk {i+1} content",
-            source=f"/test/doc_{i+1}.txt",
-            metadata={"index": i}
+            content=f"Test chunk {i+1} content", source=f"/test/doc_{i+1}.txt", metadata={"index": i}
         )
         if with_embeddings:
-            chunk.embedding = [0.1 * (i+1), 0.2 * (i+1), 0.3 * (i+1)] * 512
+            chunk.embedding = [0.1 * (i + 1), 0.2 * (i + 1), 0.3 * (i + 1)] * 512
             chunk.embedding_model = "text-embedding-3-small"
         chunks.append(chunk)
     return chunks

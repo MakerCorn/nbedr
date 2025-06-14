@@ -1,5 +1,6 @@
 try:
-    from azure.identity import DefaultAzureCredential, CredentialUnavailableError
+    from azure.identity import CredentialUnavailableError, DefaultAzureCredential
+
     credential = DefaultAzureCredential()
     AZURE_AVAILABLE = True
 except ImportError:
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 
 tokens = {}
 
+
 def get_db_token() -> Optional[str]:
     """Retrieves a token for database access using Azure Entra ID.
 
@@ -24,6 +26,7 @@ def get_db_token() -> Optional[str]:
         Optional[str]: The database access token, or None if unavailable.
     """
     return _get_token("db_token", "https://ossrdbms-aad.database.windows.net/.default")
+
 
 def get_azure_openai_token() -> Optional[str]:
     """Retrieves a token for Azure OpenAI service using Azure Entra ID.
@@ -33,6 +36,7 @@ def get_azure_openai_token() -> Optional[str]:
     """
     return get_cognitive_service_token()
 
+
 def get_cognitive_service_token() -> Optional[str]:
     """Retrieves a token for Azure Cognitive Services using Azure Entra ID.
 
@@ -41,9 +45,11 @@ def get_cognitive_service_token() -> Optional[str]:
     """
     return _get_token("cognitive_token", "https://cognitiveservices.azure.com/.default")
 
+
 def _format_datetime(dt):
     """Formats a datetime object as a string in the local timezone."""
-    return datetime.utcfromtimestamp(dt).replace(tzinfo=timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.utcfromtimestamp(dt).replace(tzinfo=timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
 
 def _get_token(token_key, resource) -> Optional[str]:
     """Retrieves and caches an Azure AD token for the specified resource.
@@ -58,7 +64,7 @@ def _get_token(token_key, resource) -> Optional[str]:
     if not AZURE_AVAILABLE or credential is None:
         log.warning("Azure identity libraries not available, returning None for token")
         return None
-        
+
     now = int(time.time())
     global tokens
     token = tokens.get(token_key)
@@ -67,9 +73,13 @@ def _get_token(token_key, resource) -> Optional[str]:
             log.debug(f"Requesting new Azure AD token for {resource}...")
             token = credential.get_token(resource)
             tokens[token_key] = token
-            log.debug(f"Got new Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})")
+            log.debug(
+                f"Got new Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
+            )
         else:
-            log.debug(f"Using cached Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})")
+            log.debug(
+                f"Using cached Azure AD token for {resource} (expires: {_format_datetime(token.expires_on)}, now: {_format_datetime(now)})"
+            )
         return token.token
     except CredentialUnavailableError as e:
         log.error(f"Azure credential unavailable: {e}")
