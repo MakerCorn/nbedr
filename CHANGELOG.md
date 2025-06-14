@@ -5,9 +5,114 @@ All notable changes to the RAG Embeddings Database project will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-06-14
+
+### Added
+
+#### GitHub Actions CI/CD Pipeline
+- **Comprehensive CI/CD Workflows**: Complete automation for testing, building, and releasing
+  - Multi-platform testing across Python 3.9, 3.10, and 3.11
+  - Automated code quality checks (Black, isort, flake8, mypy)
+  - Security scanning with Bandit and Trivy vulnerability detection
+  - Comprehensive test coverage reporting with Codecov integration
+  - Automated artifact building and preservation
+- **Release Automation**: Complete release workflow with manual triggering
+  - Automatic semantic version management (patch, minor, major)
+  - Changelog integration with automatic release notes generation
+  - Multi-platform Docker container building (AMD64, ARM64)
+  - PyPI package publishing with environment protection
+  - GitHub releases with comprehensive artifact distribution
+- **Security and Quality Gates**: Enterprise-grade security and quality assurance
+  - Container vulnerability scanning with SARIF integration
+  - Dependency security analysis and reporting
+  - Automated testing across multiple Python versions
+  - Code coverage monitoring and trend analysis
+
+#### Build and Deployment System
+- **Docker Multi-Platform Support**: Production-ready container images
+  - Multi-stage Docker builds for optimized image size
+  - AMD64 and ARM64 architecture support for broad compatibility
+  - GitHub Container Registry integration with automatic tagging
+  - Optimized caching for faster build times
+  - Security-hardened containers with non-root user execution
+- **Package Distribution**: Multiple distribution channels for maximum accessibility
+  - PyPI package publishing with automatic version management
+  - Docker container distribution via GitHub Container Registry
+  - Source code distribution with tagged releases
+  - Development package support with editable installations
+- **Version Management**: Automated semantic versioning with maintenance support
+  - Automatic version bumping based on release type
+  - Git tag creation with proper version alignment
+  - Changelog integration with release-specific content extraction
+  - Support for patch releases and maintenance branches
+
+#### Development and Documentation
+- **Build Process Documentation**: Comprehensive build and release documentation
+  - Complete CI/CD pipeline documentation with troubleshooting guides
+  - Local development setup and testing procedures
+  - Release process documentation with step-by-step instructions
+  - Container deployment and configuration guidelines
+  - Performance optimization and monitoring recommendations
+- **GitHub Actions Workflows**: Production-ready automation workflows
+  - `.github/workflows/ci.yml`: Comprehensive CI/CD pipeline
+  - `.github/workflows/release.yml`: Automated release management
+  - Matrix testing across multiple Python versions
+  - Parallel job execution for optimal performance
+  - Artifact preservation and distribution automation
+
+### Enhanced
+
+#### CLI Entry Point System
+- **Professional CLI Installation**: Native command-line tool experience
+  - Entry point configuration in `pyproject.toml` for `nbedr` command
+  - System-wide CLI availability after package installation
+  - Eliminated need for `python3` prefix in command execution
+  - Cross-platform compatibility with virtual environment support
+  - Professional tool distribution following Python packaging standards
+
+#### Documentation Structure
+- **README Build Section**: Integrated build documentation with quick references
+  - Build and Release section with comprehensive overview
+  - Quick build commands for common development tasks
+  - Release process explanation with workflow integration
+  - Cross-references to detailed build documentation
+  - Professional presentation of build and deployment procedures
+
+### Technical Details
+- **GitHub Actions Architecture**: Scalable and maintainable automation
+  - Job dependency management for optimal workflow execution
+  - Artifact sharing between workflow jobs for efficiency
+  - Environment-specific configurations for staging and production
+  - Secret management for secure API token handling
+  - Matrix builds for comprehensive compatibility testing
+- **Package Management System**: Modern Python packaging with best practices
+  - `pyproject.toml` configuration following PEP 517/518 standards
+  - Entry point definitions for seamless CLI tool installation
+  - Optional dependency groups for modular installation options
+  - Development tooling integration with automated quality checks
+- **Container Optimization**: Production-ready container deployment
+  - Multi-stage builds for minimal runtime image size
+  - Dependency layer caching for faster subsequent builds
+  - Security-focused configuration with non-privileged execution
+  - Health check integration for deployment monitoring
+  - Environment variable configuration for flexible deployment
+
 ## [1.6.0] - 2025-06-14
 
 ### Added
+
+#### README.md Advanced Configuration Section
+- **Advanced Configuration Section**: Reorganized README.md to include comprehensive Advanced Configuration section
+  - Created new Advanced Configuration section consolidating all advanced settings
+  - Moved rate limiting configuration, parallel processing, and multi-instance deployment information
+  - Added cross-references to detailed embedding provider configurations
+  - Added cross-references to vector database configuration options  
+  - Added cross-references to advanced chunking strategies
+  - Improved document organization for better user navigation
+- **Documentation Improvements**: Enhanced structure and navigation of configuration documentation
+  - Basic Configuration section now focuses on essential quick-start settings
+  - Advanced Configuration section provides comprehensive production deployment guidance
+  - Clear separation between novice and advanced user documentation
 
 #### Embedding Prompt Template System
 - **Custom Prompt Templates**: Complete system for customizing embedding generation prompts
@@ -53,6 +158,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Templates ConfigMap for centralized template management
   - Volume mounting configuration for template access
   - Environment variables for template path configuration
+
+#### Documentation Reorganization
+- **README Structure Overhaul**: Complete reorganization for better logical flow and user experience
+  - Added comprehensive Table of Contents with proper section linking
+  - Reorganized sections in logical progression: Overview → Features → Quick Start → Configuration → Advanced Configuration
+  - Grouped all advanced configuration topics together for power users
+  - Separated basic configuration from advanced topics for better accessibility
+  - Improved navigation with cross-references and section organization
+  - Standardized command examples and environment variable formatting
+  - Consolidated duplicate content and removed inconsistencies
 
 #### Documentation Enhancements
 - **README Template Section**: Comprehensive prompt customization documentation

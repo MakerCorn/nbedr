@@ -68,7 +68,7 @@ all = [
 ]
 
 [project.scripts]
-rag-embeddings = "cli.main:main"
+nbedr = "cli.main:main"
 
 [project.urls]
 "Homepage" = "https://github.com/your-org/rag-embeddings-db"

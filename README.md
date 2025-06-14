@@ -2,32 +2,18 @@
 
 A powerful tool for creating and managing embedding databases for Retrieval Augmented Generation (RAG) applications.
 
-## Features
+## Table of Contents
 
-### 🚀 Core Capabilities
-
-- **Multi-format Document Processing**: PDF, TXT, JSON, PPTX, and more
-- **Advanced Chunking Strategies**: Semantic, fixed-size, and sentence-aware chunking
-- **Multiple Vector Databases**: FAISS, Pinecone, and ChromaDB support
-- **Parallel Processing**: Efficient batch processing with configurable workers and multi-instance coordination
-- **Rate Limiting**: Smart API rate limiting to prevent quota exhaustion
-- **Cloud Storage Integration**: S3, Azure Blob, and SharePoint support
-
-### 🔧 Document Sources
-
-- **Local Files**: Process files from local directories
-- **Amazon S3**: Direct integration with S3 buckets
-- **SharePoint**: Microsoft SharePoint document libraries
-- **Batch Processing**: Handle large document collections efficiently
-
-### 🎯 Vector Database Support
-
-- **FAISS**: High-performance similarity search and clustering
-- **Pinecone**: Managed vector database service
-- **ChromaDB**: Open-source embedding database
-- **Azure AI Search**: Microsoft's enterprise search service with vector capabilities
-- **AWS Elasticsearch**: Amazon's managed Elasticsearch with vector search support
-- **PGVector**: PostgreSQL with pgvector extension for vector operations
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Understanding Chunking](#understanding-chunking-the-art-of-breaking-down-documents)
+- [Configuration](#configuration)
+- [Using Your Embedding Database](#using-your-embedding-database)
+- [Advanced Configuration](#advanced-configuration)
+- [Development](#development)
+- [Build and Release](#build-and-release)
+- [Contributing](#contributing)
 
 ## Overview
 
@@ -74,31 +60,163 @@ This application handles the **preparation phase** - the crucial foundation that
 
 This tool provides a streamlined solution for processing documents, generating embeddings, and storing them in vector databases. Built on the foundation of the excellent RAFT toolkit, it focuses specifically on embedding operations and vector database management - essentially preparing your documents so they can be used effectively in AI applications.
 
-### Rate Limiting and Throttling
+### Architecture
 
-nBedR includes comprehensive rate limiting and throttling capabilities to ensure stable, cost-effective operation with cloud-based AI services and vector databases. This prevents quota exhaustion, reduces costs, and maintains consistent performance.
+```mermaid
+graph TD
+    A[Document Sources] --> B[Document Service]
+    B --> C[Text Chunking]
+    C --> D[Embedding Generation]
+    D --> E[Vector Database]
+    
+    A1[Local Files] --> A
+    A2[S3 Bucket] --> A
+    A3[SharePoint] --> A
+    
+    E1[FAISS] --> E
+    E2[Pinecone] --> E
+    E3[ChromaDB] --> E
+    E4[Azure AI Search] --> E
+    E5[AWS Elasticsearch] --> E
+    E6[PGVector] --> E
+    
+    F[Configuration] --> B
+    G[Rate Limiter] --> D
+```
 
-#### Why Rate Limiting Matters
+## Features
 
-When processing large document collections, you'll make thousands of API calls to embedding providers and vector databases. Without proper rate limiting:
+### 🚀 Core Capabilities
 
-- **API Quotas**: You'll hit rate limits and receive 429 errors
-- **Costs**: Burst traffic can lead to unexpected charges
-- **Performance**: Services may throttle or block your requests
-- **Reliability**: Processing jobs may fail partially through completion
+- **Multi-format Document Processing**: PDF, TXT, JSON, PPTX, and more
+- **Advanced Chunking Strategies**: Semantic, fixed-size, and sentence-aware chunking
+- **Multiple Vector Databases**: FAISS, Pinecone, and ChromaDB support
+- **Parallel Processing**: Efficient batch processing with configurable workers and multi-instance coordination
+- **Rate Limiting**: Smart API rate limiting to prevent quota exhaustion
+- **Cloud Storage Integration**: S3, Azure Blob, and SharePoint support
 
-#### Rate Limiting Strategies
+### 🔧 Document Sources
 
-nBedR supports four intelligent rate limiting strategies:
+- **Local Files**: Process files from local directories
+- **Amazon S3**: Direct integration with S3 buckets
+- **SharePoint**: Microsoft SharePoint document libraries
+- **Batch Processing**: Handle large document collections efficiently
 
-1. **Fixed Window** (`fixed_window`): Classic rate limiting with fixed time windows
-2. **Sliding Window** (`sliding_window`): More accurate rate limiting with rolling time windows  
-3. **Token Bucket** (`token_bucket`): Allows burst traffic up to configured limits
-4. **Adaptive** (`adaptive`): Automatically adjusts rates based on response times
+### 🎯 Vector Database Support
 
-#### Provider-Specific Rate Limiting
+- **FAISS**: High-performance similarity search and clustering
+- **Pinecone**: Managed vector database service
+- **ChromaDB**: Open-source embedding database
+- **Azure AI Search**: Microsoft's enterprise search service with vector capabilities
+- **AWS Elasticsearch**: Amazon's managed Elasticsearch with vector search support
+- **PGVector**: PostgreSQL with pgvector extension for vector operations
 
-Rate limiting is configured separately for embedding providers and vector databases:
+## Quick Start
+
+### Installation
+
+```bash
+# Install from PyPI
+pip install nbedr
+
+# Or install from source
+git clone https://github.com/your-org/nbedr.git
+cd nbedr
+pip install -e .
+```
+
+### Basic Usage
+
+1. **Set up your environment variables:**
+
+```bash
+# Choose your embedding provider
+export EMBEDDING_PROVIDER="openai"
+export OPENAI_API_KEY="your-api-key-here"
+
+# Choose your vector database
+export VECTOR_DATABASE_TYPE="faiss"
+```
+
+2. **Process documents and create embeddings:**
+
+```bash
+# Process local documents
+nbedr create-embeddings \
+    --source local \
+    --local-path ./documents \
+    --output-path ./embeddings
+
+# Process S3 documents
+nbedr create-embeddings \
+    --source s3 \
+    --s3-bucket my-documents \
+    --output-path ./embeddings
+```
+
+3. **Search your embeddings:**
+
+```bash
+nbedr search \
+    --query "What is machine learning?" \
+    --embeddings-path ./embeddings \
+    --top-k 5
+```
+
+### Configuration
+
+Basic configuration is handled through environment variables. Here are the essential settings:
+
+#### Core Settings
+
+```bash
+# Embedding Provider
+export EMBEDDING_PROVIDER="openai"  # openai, azure_openai, aws_bedrock, etc.
+export OPENAI_API_KEY="your-api-key-here"
+export EMBEDDING_MODEL="text-embedding-3-large"
+export EMBEDDING_DIMENSIONS=1536
+
+# Vector Database
+export VECTOR_DATABASE_TYPE="faiss"  # faiss, pinecone, chromadb, etc.
+export FAISS_INDEX_PATH="./embeddings_db"
+
+# Document Processing
+export CHUNK_SIZE=512
+export CHUNKING_STRATEGY="semantic"  # semantic, fixed_size, sentence_aware
+export BATCH_SIZE=10
+export MAX_WORKERS=4
+```
+
+#### Quick Provider Setup
+
+**OpenAI:**
+```bash
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_ORGANIZATION="your-org-id"  # Optional
+```
+
+**Pinecone:**
+```bash
+export PINECONE_API_KEY="your-api-key"
+export PINECONE_ENVIRONMENT="your-environment"
+export PINECONE_INDEX_NAME="your-index"
+```
+
+**ChromaDB:**
+```bash
+export CHROMA_HOST="localhost"
+export CHROMA_PORT=8000
+```
+
+For detailed configuration options, advanced settings, and comprehensive setup guides, see the [Advanced Configuration](#advanced-configuration) section below.
+
+## Advanced Configuration
+
+This section covers advanced configuration options for production deployments, performance optimization, and specialized use cases.
+
+### Rate Limiting Configuration
+
+Rate limiting is configured separately for embedding providers and vector databases to prevent API quota exhaustion and optimize performance:
 
 **Embedding Providers:**
 ```env
@@ -154,6 +272,20 @@ nBedR includes optimized presets for popular services:
 - Set token limits to control embedding costs
 - Use local providers for development
 - Batch documents efficiently to minimize API calls
+
+## Advanced Configuration
+
+This section covers advanced configuration options for power users who need fine-grained control over nBedR's behavior, performance tuning, and enterprise deployment scenarios.
+
+### Advanced Configuration Topics
+
+- [Rate Limiting Configuration](#rate-limiting-configuration)
+- [Parallel Processing and Multi-Instance Deployment](#parallel-processing-and-multi-instance-deployment)
+- [Detailed Embedding Provider Configurations](#detailed-embedding-provider-configurations)
+- [Advanced Vector Database Configurations](#advanced-vector-database-configurations)
+- [Advanced Chunking Strategies](#advanced-chunking-strategies)
+
+### Rate Limiting Configuration
 
 #### Rate Limiting Configuration Examples
 
@@ -374,6 +506,17 @@ tail -f /tmp/nbedr_coordination/coordination.log
 nbedr create-embeddings --validate --datapath ./docs
 ```
 
+### Detailed Embedding Provider Configurations
+
+For comprehensive configuration options for all 7 embedding providers, see the [Embedding Providers section](#embedding-providers-choose-your-ai-platform) below.
+
+### Advanced Vector Database Configurations
+
+For detailed vector database configuration options and selection guidance, see the [Vector Databases section](#vector-databases) below.
+
+### Advanced Chunking Strategies
+
+For detailed chunking configuration and optimization, see the [Understanding Chunking section](#understanding-chunking-the-art-of-breaking-down-documents) below.
 ## Architecture
 
 ```mermaid
@@ -1607,6 +1750,38 @@ mypy core/
 flake8 core/
 bandit -r core/
 ```
+
+## Build and Release
+
+For comprehensive build instructions, CI/CD pipeline details, release procedures, and deployment guidelines, see the **[Build Documentation](docs/BUILD.md)**.
+
+### Quick Build Commands
+
+```bash
+# Local development setup
+pip install -e .[dev,all]
+
+# Run tests and quality checks
+pytest tests/ -v --cov=core --cov=cli
+black . && isort . && flake8 .
+
+# Build Python package
+python -m build
+
+# Build Docker container
+docker build -f deployment/docker/Dockerfile -t nbedr:local .
+```
+
+### Release Process
+
+Releases are managed through GitHub Actions workflows:
+
+1. **Automated CI/CD**: Every push triggers comprehensive testing and building
+2. **Manual Releases**: Use GitHub Actions UI to trigger releases with automatic version management
+3. **Multiple Artifacts**: Releases include PyPI packages and Docker containers
+4. **Changelog Integration**: Release notes automatically include changelog content
+
+For detailed release procedures and troubleshooting, see the [Build Documentation](docs/BUILD.md).
 
 ## Contributing
 
