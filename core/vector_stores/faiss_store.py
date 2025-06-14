@@ -10,9 +10,12 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 import numpy as np
 import faiss
+import fcntl
+import os
 
 from .base import BaseVectorStore
 from ..models import DocumentChunk, VectorSearchResult
+from ..utils.instance_coordinator import InstanceCoordinator
 
 logger = logging.getLogger(__name__)
 
@@ -20,17 +23,28 @@ logger = logging.getLogger(__name__)
 class FAISSVectorStore(BaseVectorStore):
     """FAISS implementation of vector store."""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], coordinator: Optional[InstanceCoordinator] = None):
         """Initialize FAISS vector store."""
         super().__init__(config)
         
         self.index_path = Path(config.get('faiss_index_path', './faiss_index'))
         self.index_type = config.get('faiss_index_type', 'IndexFlatIP')
         self.embedding_dim = config.get('embedding_dimensions', 1536)
+        self.coordinator = coordinator
+        
+        # Use instance-specific path if coordinator is provided
+        if self.coordinator:
+            suggested_paths = self.coordinator.suggest_instance_specific_paths()
+            if 'faiss_index_path' in suggested_paths:
+                self.index_path = Path(suggested_paths['faiss_index_path'])
+                logger.info(f"Using instance-specific FAISS path: {self.index_path}")
         
         self.index = None
         self.document_map = {}  # Maps index positions to document metadata
         self.next_id = 0
+        
+        # File locking for concurrent access
+        self.lock_file = self.index_path.parent / f"{self.index_path.name}.lock"
     
     async def initialize(self) -> None:
         """Initialize the FAISS index."""
@@ -43,12 +57,19 @@ class FAISSVectorStore(BaseVectorStore):
             # Load existing index if it exists
             if index_file.exists() and metadata_file.exists():
                 logger.info(f"Loading existing FAISS index from {index_file}")
-                self.index = faiss.read_index(str(index_file))
                 
-                with open(metadata_file, 'rb') as f:
-                    data = pickle.load(f)
-                    self.document_map = data.get('document_map', {})
-                    self.next_id = data.get('next_id', 0)
+                # Use file locking when loading to prevent conflicts
+                try:
+                    with self._acquire_file_lock():
+                        self.index = faiss.read_index(str(index_file))
+                        
+                        with open(metadata_file, 'rb') as f:
+                            data = pickle.load(f)
+                            self.document_map = data.get('document_map', {})
+                            self.next_id = data.get('next_id', 0)
+                except (FileNotFoundError, pickle.PickleError) as e:
+                    logger.warning(f"Failed to load existing index, creating new one: {e}")
+                    self._create_new_index()
             else:
                 logger.info(f"Creating new FAISS index: {self.index_type}")
                 self._create_new_index()
@@ -225,26 +246,53 @@ class FAISSVectorStore(BaseVectorStore):
             return {"error": str(e)}
     
     async def _save_index(self):
-        """Save FAISS index and metadata to disk."""
+        """Save FAISS index and metadata to disk with file locking."""
         try:
             index_file = self.index_path / "index.faiss"
             metadata_file = self.index_path / "metadata.pkl"
             
-            # Save FAISS index
-            faiss.write_index(self.index, str(index_file))
-            
-            # Save metadata
-            with open(metadata_file, 'wb') as f:
-                pickle.dump({
-                    'document_map': self.document_map,
-                    'next_id': self.next_id
-                }, f)
-            
-            logger.debug(f"Saved FAISS index to {index_file}")
+            # Acquire exclusive lock for saving
+            with self._acquire_file_lock():
+                # Save FAISS index
+                faiss.write_index(self.index, str(index_file))
+                
+                # Save metadata
+                with open(metadata_file, 'wb') as f:
+                    pickle.dump({
+                        'document_map': self.document_map,
+                        'next_id': self.next_id
+                    }, f)
+                
+                logger.debug(f"Saved FAISS index to {index_file}")
             
         except Exception as e:
             logger.error(f"Failed to save FAISS index: {e}")
             raise
+    
+    def _acquire_file_lock(self):
+        """Context manager for file locking."""
+        class FileLock:
+            def __init__(self, lock_file):
+                self.lock_file = lock_file
+                self.lock_fd = None
+            
+            def __enter__(self):
+                self.lock_fd = open(self.lock_file, 'w')
+                fcntl.flock(self.lock_fd.fileno(), fcntl.LOCK_EX)
+                logger.debug(f"Acquired file lock: {self.lock_file}")
+                return self
+            
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                if self.lock_fd:
+                    fcntl.flock(self.lock_fd.fileno(), fcntl.LOCK_UN)
+                    self.lock_fd.close()
+                try:
+                    os.unlink(self.lock_file)
+                except FileNotFoundError:
+                    pass
+                logger.debug(f"Released file lock: {self.lock_file}")
+        
+        return FileLock(self.lock_file)
     
     async def close(self) -> None:
         """Close FAISS vector store."""

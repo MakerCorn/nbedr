@@ -36,15 +36,36 @@ except ImportError:
 
 from ..models import DocumentChunk, DocType, ChunkingStrategy, EmbeddingBatch, ProcessingResult, EmbeddingStats
 from ..config import EmbeddingConfig
+from ..utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator
 
 logger = logging.getLogger(__name__)
 
 class DocumentService:
     """Service for document processing, chunking, and embedding generation."""
     
-    def __init__(self, config: EmbeddingConfig):
+    def __init__(self, config: EmbeddingConfig, enable_coordination: bool = True):
         self.config = config
         self.stats = EmbeddingStats()
+        
+        # Initialize instance coordination if enabled
+        self.coordinator = None
+        if enable_coordination:
+            try:
+                self.coordinator = create_instance_coordinator(config)
+                if self.coordinator.register_instance():
+                    logger.info("Instance coordination enabled")
+                    
+                    # Update config with instance-specific paths if suggested
+                    suggested_paths = self.coordinator.suggest_instance_specific_paths()
+                    if 'output_path' in suggested_paths:
+                        self.config.output = suggested_paths['output_path']
+                        logger.info(f"Using instance-specific output path: {self.config.output}")
+                else:
+                    logger.error("Failed to register instance - conflicts detected")
+                    self.coordinator = None
+            except Exception as e:
+                logger.warning(f"Failed to initialize instance coordination: {e}")
+                self.coordinator = None
     
     def process_documents(self, data_path: Path) -> List[DocumentChunk]:
         """Process documents and return chunks."""
@@ -192,6 +213,27 @@ class DocumentService:
         
         self.stats.total_chunks = len(all_chunks)
         return all_chunks
+    
+    def update_heartbeat(self):
+        """Update instance heartbeat if coordination is enabled."""
+        if self.coordinator:
+            try:
+                self.coordinator.update_heartbeat()
+            except Exception as e:
+                logger.warning(f"Failed to update heartbeat: {e}")
+    
+    def cleanup_instance(self):
+        """Cleanup instance registration."""
+        if self.coordinator:
+            try:
+                self.coordinator.unregister_instance()
+                logger.info("Instance coordination cleaned up")
+            except Exception as e:
+                logger.warning(f"Failed to cleanup instance coordination: {e}")
+    
+    def __del__(self):
+        """Cleanup on object destruction."""
+        self.cleanup_instance()
     
     def _process_single_file(self, file_path: Path) -> List[DocumentChunk]:
         """Process a single file and return its chunks."""

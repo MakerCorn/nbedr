@@ -182,6 +182,14 @@ def add_create_embedding_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--rate-limit-max-retries", type=int, default=3,
                         help="Maximum number of retries on rate limit errors (default: 3)")
 
+    # Instance Coordination Arguments
+    parser.add_argument("--disable-coordination", action="store_true",
+                        help="Disable instance coordination for parallel execution")
+    parser.add_argument("--instance-id", type=str,
+                        help="Custom instance ID (auto-generated if not provided)")
+    parser.add_argument("--list-instances", action="store_true",
+                        help="List all active instances and exit")
+
 def add_search_args(parser: argparse.ArgumentParser) -> None:
     """Add arguments for search command."""
     parser.add_argument("--query", type=str, required=True,
@@ -430,6 +438,39 @@ def validate_create_embeddings(service: DocumentService, config: EmbeddingConfig
         logger.error(f"Validation failed: {e}", exc_info=True)
         sys.exit(1)
 
+def handle_list_instances(args: argparse.Namespace) -> None:
+    """Handle list-instances command."""
+    from core.utils.instance_coordinator import create_instance_coordinator
+    
+    try:
+        # Create a temporary coordinator to access instance registry
+        config = get_config(args.env_file)
+        coordinator = create_instance_coordinator(config)
+        
+        active_instances = coordinator.get_active_instances()
+        
+        print("\n📋 Active nBedR Instances")
+        print("=" * 50)
+        
+        if not active_instances:
+            print("No active instances found.")
+        else:
+            for instance in active_instances:
+                print(f"Instance ID: {instance.instance_id}")
+                print(f"  Process ID: {instance.process_id}")
+                print(f"  Started: {instance.started_at}")
+                print(f"  Output Path: {instance.output_path}")
+                print(f"  Vector DB Path: {instance.vector_db_path or 'N/A'}")
+                print(f"  Status: {instance.status}")
+                print(f"  Config Hash: {instance.config_hash}")
+                print()
+        
+        print(f"Total Active Instances: {len(active_instances)}")
+        
+    except Exception as e:
+        logger.error(f"Failed to list instances: {e}")
+        sys.exit(1)
+
 def handle_create_embeddings(args: argparse.Namespace) -> None:
     """Handle create-embeddings command."""
     logger.info("Loading configuration for embedding creation")
@@ -437,6 +478,11 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
     
     # Override with command line arguments
     config = override_config_from_args(config, args)
+    
+    # Handle list instances command
+    if hasattr(args, 'list_instances') and args.list_instances:
+        handle_list_instances(args)
+        return
     
     # Validate required arguments
     if config.source_type == "local":
@@ -448,9 +494,10 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
             print(f"Error: --source-uri is required for {config.source_type} source type")
             sys.exit(1)
     
-    # Create document service
+    # Create document service with coordination
     logger.info("Initializing document service")
-    service = DocumentService(config)
+    enable_coordination = not (hasattr(args, 'disable_coordination') and args.disable_coordination)
+    service = DocumentService(config, enable_coordination=enable_coordination)
     
     # Handle special modes
     if args.preview:
@@ -481,14 +528,17 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
     try:
         # Process documents
         logger.info("Processing documents and creating chunks")
+        service.update_heartbeat()  # Update heartbeat
         chunks = service.process_documents(config.datapath if config.source_type == "local" else Path(config.source_uri))
         
         # Generate embeddings
         logger.info("Generating embeddings for chunks")
+        service.update_heartbeat()  # Update heartbeat
         embedded_chunks = service.generate_embeddings(chunks)
         
         # Store embeddings
         logger.info("Storing embeddings in vector database")
+        service.update_heartbeat()  # Update heartbeat
         success = service.store_embeddings(embedded_chunks)
         
         # Show results
@@ -509,6 +559,9 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
     except Exception as e:
         logger.error(f"Error during embedding creation: {e}", exc_info=True)
         sys.exit(1)
+    finally:
+        # Cleanup instance coordination
+        service.cleanup_instance()
 
 def handle_search(args: argparse.Namespace) -> None:
     """Handle search command."""

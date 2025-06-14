@@ -90,6 +90,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Validation System**: Comprehensive validation for all rate limiting parameters
 - **Backward Compatibility**: All existing configurations continue to work
 
+#### Multi-Instance Parallel Processing
+- **Instance Coordination System**: Complete coordination system for running multiple instances safely
+  - Automatic conflict detection for output paths and vector database files
+  - Instance-specific path generation to prevent file conflicts
+  - Instance registry with heartbeat monitoring and cleanup
+  - Compatible instance grouping based on configuration hash
+- **File Locking**: Comprehensive file locking for FAISS index operations
+  - Exclusive locks for index saving and loading operations
+  - Atomic file operations to prevent corruption
+  - Cross-instance coordination for shared vector database access
+- **Shared Rate Limiting**: Rate limit coordination across multiple instances
+  - Automatic rate limit distribution among active instances
+  - Shared state tracking for token usage and response times
+  - Fair resource allocation to prevent quota violations
+- **CLI Enhancements**: New command-line options for instance management
+  - `--disable-coordination`: Disable instance coordination
+  - `--instance-id`: Custom instance identification
+  - `--list-instances`: View all active instances
+- **Production Ready**: Enterprise-grade parallel processing capabilities
+  - Process isolation with independent failure handling
+  - Scalable to dozens of concurrent instances
+  - Container and orchestration platform support
+
 ## [1.3.0] - 2025-06-14
 
 ### Added

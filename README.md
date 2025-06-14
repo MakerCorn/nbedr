@@ -2,6 +2,33 @@
 
 A powerful tool for creating and managing embedding databases for Retrieval Augmented Generation (RAG) applications.
 
+## Features
+
+### 🚀 Core Capabilities
+
+- **Multi-format Document Processing**: PDF, TXT, JSON, PPTX, and more
+- **Advanced Chunking Strategies**: Semantic, fixed-size, and sentence-aware chunking
+- **Multiple Vector Databases**: FAISS, Pinecone, and ChromaDB support
+- **Parallel Processing**: Efficient batch processing with configurable workers and multi-instance coordination
+- **Rate Limiting**: Smart API rate limiting to prevent quota exhaustion
+- **Cloud Storage Integration**: S3, Azure Blob, and SharePoint support
+
+### 🔧 Document Sources
+
+- **Local Files**: Process files from local directories
+- **Amazon S3**: Direct integration with S3 buckets
+- **SharePoint**: Microsoft SharePoint document libraries
+- **Batch Processing**: Handle large document collections efficiently
+
+### 🎯 Vector Database Support
+
+- **FAISS**: High-performance similarity search and clustering
+- **Pinecone**: Managed vector database service
+- **ChromaDB**: Open-source embedding database
+- **Azure AI Search**: Microsoft's enterprise search service with vector capabilities
+- **AWS Elasticsearch**: Amazon's managed Elasticsearch with vector search support
+- **PGVector**: PostgreSQL with pgvector extension for vector operations
+
 ## Overview
 
 ### What Are Embeddings and Why Do They Matter?
@@ -171,29 +198,181 @@ nBedR provides detailed rate limiting statistics accessible through the applicat
 
 Use these metrics to optimize your rate limiting configuration for your specific workload and API tier.
 
-## Features
+### Parallel Processing and Multi-Instance Deployment
 
-### 🚀 Core Capabilities
-- **Multi-format Document Processing**: PDF, TXT, JSON, PPTX, and more
-- **Advanced Chunking Strategies**: Semantic, fixed-size, and sentence-aware chunking
-- **Multiple Vector Databases**: FAISS, Pinecone, and ChromaDB support
-- **Parallel Processing**: Efficient batch processing with configurable workers
-- **Rate Limiting**: Smart API rate limiting to prevent quota exhaustion
-- **Cloud Storage Integration**: S3, Azure Blob, and SharePoint support
+nBedR supports running multiple instances in parallel to dramatically speed up document processing for large datasets. The application includes sophisticated coordination mechanisms to prevent conflicts and ensure safe concurrent operation.
 
-### 🔧 Document Sources
-- **Local Files**: Process files from local directories
-- **Amazon S3**: Direct integration with S3 buckets
-- **SharePoint**: Microsoft SharePoint document libraries
-- **Batch Processing**: Handle large document collections efficiently
+#### Why Run Multiple Instances?
 
-### 🎯 Vector Database Support
-- **FAISS**: High-performance similarity search and clustering
-- **Pinecone**: Managed vector database service
-- **ChromaDB**: Open-source embedding database
-- **Azure AI Search**: Microsoft's enterprise search service with vector capabilities
-- **AWS Elasticsearch**: Amazon's managed Elasticsearch with vector search support
-- **PGVector**: PostgreSQL with pgvector extension for vector operations
+When processing thousands of documents, a single instance can become a bottleneck. Multiple instances provide:
+
+- **Faster Processing**: Parallel document processing across multiple CPU cores
+- **Higher Throughput**: Multiple embedding API calls running simultaneously  
+- **Fault Tolerance**: If one instance fails, others continue processing
+- **Resource Utilization**: Better utilization of available CPU, memory, and network bandwidth
+
+#### Instance Coordination System
+
+nBedR automatically coordinates multiple instances to prevent conflicts:
+
+**Conflict Detection:**
+- Detects when multiple instances would write to the same output paths
+- Prevents concurrent access to the same vector database files
+- Validates configuration compatibility between instances
+
+**Automatic Path Separation:**
+- Generates instance-specific output directories
+- Creates separate vector database paths for each instance
+- Ensures no file conflicts between concurrent instances
+
+**Resource Coordination:**
+- Distributes rate limits fairly across all running instances
+- Coordinates API quota usage to prevent rate limit violations
+- Shares performance metrics for optimal load balancing
+
+#### Running Multiple Instances
+
+**Basic Parallel Deployment:**
+```bash
+# Terminal 1 - Instance 1
+nbedr create-embeddings --datapath ./docs1 --output ./output1
+
+# Terminal 2 - Instance 2  
+nbedr create-embeddings --datapath ./docs2 --output ./output2
+
+# Terminal 3 - Instance 3
+nbedr create-embeddings --datapath ./docs3 --output ./output3
+```
+
+**Shared Dataset Processing:**
+```bash
+# All instances process the same dataset with automatic coordination
+# Instance paths are automatically separated
+
+# Terminal 1
+nbedr create-embeddings --datapath ./large_dataset
+
+# Terminal 2
+nbedr create-embeddings --datapath ./large_dataset
+
+# Terminal 3
+nbedr create-embeddings --datapath ./large_dataset
+```
+
+**Custom Instance Configuration:**
+```bash
+# Disable coordination for specific use cases
+nbedr create-embeddings --disable-coordination --datapath ./docs
+
+# List all active instances
+nbedr create-embeddings --list-instances
+
+# Use specific instance ID
+nbedr create-embeddings --instance-id my-custom-instance --datapath ./docs
+```
+
+#### Instance Management
+
+**Monitor Active Instances:**
+```bash
+# List all running instances
+nbedr create-embeddings --list-instances
+```
+
+**Environment Variables for Coordination:**
+```env
+# Disable coordination system
+NBEDR_DISABLE_COORDINATION=true
+
+# Custom coordination directory
+NBEDR_COORDINATION_DIR=/tmp/nbedr_coordination
+
+# Instance heartbeat interval (seconds)
+NBEDR_HEARTBEAT_INTERVAL=60
+```
+
+#### Rate Limiting with Multiple Instances
+
+When multiple instances run simultaneously, rate limits are automatically distributed:
+
+**Single Instance:**
+- 500 requests per minute → 500 RPM for the instance
+
+**Three Instances:**
+- 500 requests per minute → 166 RPM per instance (500/3)
+- Prevents collective rate limit violations
+- Ensures fair resource distribution
+
+**Manual Rate Limit Override:**
+```env
+# Set per-instance rate limits manually
+RATE_LIMIT_REQUESTS_PER_MINUTE=100
+RATE_LIMIT_TOKENS_PER_MINUTE=50000
+```
+
+#### Best Practices for Parallel Processing
+
+**Data Organization:**
+- Split large datasets into balanced chunks for each instance
+- Use different source directories to avoid file locking conflicts
+- Consider document types and sizes when distributing work
+
+**Resource Planning:**
+- Monitor CPU usage - optimal is typically 2-4 instances per CPU core
+- Watch memory consumption - each instance loads its own models
+- Consider network bandwidth for API-heavy operations
+
+**Error Handling:**
+- Each instance fails independently without affecting others
+- Use consistent configuration across all instances
+- Monitor logs from all instances for comprehensive debugging
+
+**Production Deployment:**
+```bash
+# Use process managers like systemd or supervisor
+systemctl start nbedr-instance-1
+systemctl start nbedr-instance-2
+systemctl start nbedr-instance-3
+
+# Or container orchestration
+docker run -d nbedr:latest --datapath /data/batch1
+docker run -d nbedr:latest --datapath /data/batch2
+docker run -d nbedr:latest --datapath /data/batch3
+```
+
+#### Troubleshooting Parallel Execution
+
+**Common Issues:**
+
+1. **Path Conflicts**
+   ```bash
+   # Error: Multiple instances writing to same path
+   # Solution: Use automatic coordination or specify different paths
+   ```
+
+2. **Rate Limit Violations**
+   ```bash
+   # Error: Combined instances exceed API limits
+   # Solution: Reduce per-instance rate limits or number of instances
+   ```
+
+3. **Vector Database Locks**
+   ```bash
+   # Error: FAISS index file locked
+   # Solution: Ensure each instance uses separate index paths
+   ```
+
+**Debugging Commands:**
+```bash
+# Check active instances
+nbedr create-embeddings --list-instances
+
+# View coordination logs
+tail -f /tmp/nbedr_coordination/coordination.log
+
+# Test configuration without running
+nbedr create-embeddings --validate --datapath ./docs
+```
 
 ## Architecture
 
