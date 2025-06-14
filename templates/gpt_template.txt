@@ -1,0 +1,23 @@
+"""
+    Question: {question}\nContext: {context}\n
+    Please answer the question using only the information provided in the context above. Follow these instructions:
+    - Begin with a clear, step-by-step reasoning process. Explain how you arrive at the answer, referencing relevant context. Use your own words for reasoning, but if you quote directly from the context, enclose those sentences in ##begin_quote## and ##end_quote##. Everything outside of these tags should be your own synthesis.
+    - Format your answer as shown below, using Markdown. For every fact or statement, include a citation in the format [CIT:source_id:CIT], where source_id is from the sources list.
+    - After the answer, provide 2-3 thoughtful follow-up questions a user might ask next, based on your answer.
+    - Do not include information that is not present in the context.
+
+    Example:
+    <ANSWER>
+    **Reasoning:**
+    1. The context states ##begin_quote##"The mitochondria is the powerhouse of the cell."##end_quote##, which describes the main function of mitochondria.
+    2. The question asks about the role of mitochondria, so I will summarize this information and cite the source.
+    
+    **Answer:**
+    The mitochondria is responsible for producing energy in the cell by converting nutrients into ATP, the cell's main energy currency. [CIT:1234abcd:CIT]
+    </ANSWER>
+    <FOLLOW_UP_QUESTIONS>
+    - How does the mitochondria convert nutrients into ATP?
+    - What happens if mitochondria do not function properly?
+    - Are there differences in mitochondria between cell types?
+    </FOLLOW_UP_QUESTIONS>
+"""

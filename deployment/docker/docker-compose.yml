@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # Shared coordination volume
+  coordination:
+    image: busybox
+    volumes:
+      - coordination_data:/tmp/nbedr_coordination
+    command: /bin/true
+
+  # Redis for shared state (optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # nBedR Instance 1
+  nbedr-instance-1:
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    environment:
+      - INSTANCE_ID=instance-1
+      - EMBEDDING_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_DB_TYPE=faiss
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=200
+      - EMBEDDING_WORKERS=2
+      - EMBED_WORKERS=2
+    volumes:
+      - ./data:/app/data:ro
+      - ./output:/app/output
+      - coordination_data:/tmp/nbedr_coordination
+      - instance1_faiss:/app/faiss_index
+    depends_on:
+      - coordination
+      - redis
+    command: ["create-embeddings", "--datapath", "/app/data", "--doctype", "pdf"]
+    restart: unless-stopped
+
+  # nBedR Instance 2
+  nbedr-instance-2:
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    environment:
+      - INSTANCE_ID=instance-2
+      - EMBEDDING_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_DB_TYPE=faiss
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=200
+      - EMBEDDING_WORKERS=2
+      - EMBED_WORKERS=2
+    volumes:
+      - ./data:/app/data:ro
+      - ./output:/app/output
+      - coordination_data:/tmp/nbedr_coordination
+      - instance2_faiss:/app/faiss_index
+    depends_on:
+      - coordination
+      - redis
+    command: ["create-embeddings", "--datapath", "/app/data", "--doctype", "txt"]
+    restart: unless-stopped
+
+  # nBedR Instance 3
+  nbedr-instance-3:
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    environment:
+      - INSTANCE_ID=instance-3
+      - EMBEDDING_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_DB_TYPE=faiss
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=200
+      - EMBEDDING_WORKERS=2
+      - EMBED_WORKERS=2
+    volumes:
+      - ./data:/app/data:ro
+      - ./output:/app/output
+      - coordination_data:/tmp/nbedr_coordination
+      - instance3_faiss:/app/faiss_index
+    depends_on:
+      - coordination
+      - redis
+    command: ["create-embeddings", "--datapath", "/app/data", "--doctype", "json"]
+    restart: unless-stopped
+
+  # Monitoring (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+volumes:
+  coordination_data:
+    driver: local
+  redis_data:
+    driver: local
+  instance1_faiss:
+    driver: local
+  instance2_faiss:
+    driver: local
+  instance3_faiss:
+    driver: local
+
+networks:
+  default:
+    name: nbedr-network

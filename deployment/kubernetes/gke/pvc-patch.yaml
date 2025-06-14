@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nbedr-data-pvc
+spec:
+  storageClassName: filestore-csi
+  accessModes:
+    - ReadOnlyMany
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nbedr-output-pvc
+spec:
+  storageClassName: filestore-csi
+  accessModes:
+    - ReadWriteMany
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  storageClassName: fast-ssd
+---
+# Filestore CSI StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: filestore-csi
+provisioner: filestore.csi.storage.gke.io
+parameters:
+  tier: standard
+  network: default
+  reserved-ip-range: "10.0.0.0/29"
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+---
+# Fast SSD StorageClass for databases
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer

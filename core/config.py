@@ -41,6 +41,10 @@ class EmbeddingConfig:
     chunking_strategy: str = "semantic"
     chunking_params: Dict[str, Any] = field(default_factory=dict)
     
+    # Prompt Template Configuration
+    embedding_prompt_template: Optional[str] = None
+    custom_prompt_variables: Dict[str, Any] = field(default_factory=dict)
+    
     # Embedding Provider Configuration
     embedding_provider: str = "openai"  # openai, azure_openai, aws_bedrock, google_vertex, lmstudio, ollama, llamacpp
     embedding_model: str = "text-embedding-3-small"
@@ -238,6 +242,17 @@ class EmbeddingConfig:
                 config.chunking_params = json.loads(chunking_params_str)
             except json.JSONDecodeError as e:
                 logger.warning(f"Failed to parse EMBEDDING_CHUNKING_PARAMS: {e}")
+        
+        # Prompt Template Configuration
+        config.embedding_prompt_template = os.getenv('EMBEDDING_PROMPT_TEMPLATE', config.embedding_prompt_template)
+        
+        # Parse custom prompt variables from JSON string
+        custom_prompt_vars_str = os.getenv('EMBEDDING_CUSTOM_PROMPT_VARIABLES')
+        if custom_prompt_vars_str:
+            try:
+                config.custom_prompt_variables = json.loads(custom_prompt_vars_str)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse EMBEDDING_CUSTOM_PROMPT_VARIABLES: {e}")
         
         # Embedding Provider Configuration
         config.embedding_provider = os.getenv('EMBEDDING_PROVIDER', config.embedding_provider)

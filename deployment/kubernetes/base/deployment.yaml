@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbedr-deployment
+  namespace: nbedr
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nbedr
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nbedr
+        app.kubernetes.io/component: worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: nbedr-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: nbedr
+        image: nbedr:latest
+        imagePullPolicy: Always
+        command:
+          - python3
+          - nbedr.py
+          - create-embeddings
+          - --datapath
+          - /app/data
+          - --doctype
+          - pdf
+        envFrom:
+        - configMapRef:
+            name: nbedr-config
+        - secretRef:
+            name: nbedr-secrets
+        env:
+        - name: INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NBEDR_COORDINATION_DIR
+          value: "/tmp/nbedr_coordination"
+        - name: NBEDR_DOCUMENT_COORDINATION_ENABLED
+          value: "true"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+          readOnly: true
+        - name: output-volume
+          mountPath: /app/output
+        - name: coordination-volume
+          mountPath: /tmp/nbedr_coordination
+        - name: faiss-volume
+          mountPath: /app/faiss_index
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: templates-volume
+          mountPath: /app/templates
+          readOnly: true
+        livenessProbe:
+          exec:
+            command:
+            - python3
+            - nbedr.py
+            - status
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - python3
+            - nbedr.py
+            - status
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: nbedr-data-pvc
+      - name: output-volume
+        persistentVolumeClaim:
+          claimName: nbedr-output-pvc
+      - name: coordination-volume
+        persistentVolumeClaim:
+          claimName: nbedr-coordination-pvc
+      - name: faiss-volume
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: logs-volume
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: templates-volume
+        configMap:
+          name: nbedr-templates
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbedr-deployment
+spec:
+  template:
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        kubernetes.io/arch: amd64
+      containers:
+      - name: nbedr
+        env:
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-aks-config
+              key: AZURE_STORAGE_ACCOUNT
+        - name: AZURE_CONTAINER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-aks-config
+              key: AZURE_CONTAINER_NAME
+        - name: AZURE_STORAGE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: nbedr-aks-secrets
+              key: AZURE_STORAGE_KEY
+        - name: AZURE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: nbedr-aks-secrets
+              key: AZURE_CLIENT_ID
+        - name: AZURE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nbedr-aks-secrets
+              key: AZURE_CLIENT_SECRET
+        - name: AZURE_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: nbedr-aks-secrets
+              key: AZURE_TENANT_ID
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"

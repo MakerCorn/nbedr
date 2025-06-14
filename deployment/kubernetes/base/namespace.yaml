@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nbedr
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: namespace
+---
+# ServiceAccount for nBedR pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nbedr-service-account
+  namespace: nbedr
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: service-account
+---
+# ClusterRole for nBedR (if needed for coordination)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nbedr-cluster-role
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: rbac
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nbedr-cluster-role-binding
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nbedr-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: nbedr-service-account
+  namespace: nbedr

@@ -4,9 +4,11 @@ Document processing service for chunking, text extraction, and embedding generat
 import json
 import logging
 import re
+import fcntl
+import hashlib
 from math import ceil
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
@@ -37,6 +39,7 @@ except ImportError:
 from ..models import DocumentChunk, DocType, ChunkingStrategy, EmbeddingBatch, ProcessingResult, EmbeddingStats
 from ..config import EmbeddingConfig
 from ..utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator
+from ..utils.document_coordinator import DocumentCoordinator
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +52,18 @@ class DocumentService:
         
         # Initialize instance coordination if enabled
         self.coordinator = None
+        self.document_coordinator = None
         if enable_coordination:
             try:
                 self.coordinator = create_instance_coordinator(config)
                 if self.coordinator.register_instance():
                     logger.info("Instance coordination enabled")
+                    
+                    # Initialize document coordination
+                    self.document_coordinator = DocumentCoordinator(
+                        coordination_dir=self.coordinator.coordination_dir,
+                        instance_id=self.coordinator.instance_id
+                    )
                     
                     # Update config with instance-specific paths if suggested
                     suggested_paths = self.coordinator.suggest_instance_specific_paths()
@@ -181,7 +191,7 @@ class DocumentService:
         return chunks
     
     def _process_regular_documents(self, data_path: Path) -> List[DocumentChunk]:
-        """Process regular documents (PDF, TXT, JSON, PPTX)."""
+        """Process regular documents (PDF, TXT, JSON, PPTX) with contention prevention."""
         # Get list of files to process
         file_paths = []
         if data_path.is_dir():
@@ -189,13 +199,22 @@ class DocumentService:
         else:
             file_paths = [data_path]
         
+        # Filter out files that are already being processed or completed
+        available_files = self._get_available_files(file_paths)
+        
+        if not available_files:
+            logger.info("No available files to process (all may be in progress or completed)")
+            return []
+        
+        logger.info(f"Processing {len(available_files)} available files out of {len(file_paths)} total")
+        
         all_chunks = []
         futures = []
         
-        with tqdm(total=len(file_paths), desc="Processing files", unit="file") as pbar:
+        with tqdm(total=len(available_files), desc="Processing files", unit="file") as pbar:
             with ThreadPoolExecutor(max_workers=self.config.embed_workers) as executor:
-                for file_path in file_paths:
-                    future = executor.submit(self._process_single_file, file_path)
+                for file_path in available_files:
+                    future = executor.submit(self._process_single_file_with_coordination, file_path)
                     futures.append(future)
                     
                     if self.config.pace:
@@ -204,7 +223,8 @@ class DocumentService:
                 for future in as_completed(futures):
                     try:
                         chunks = future.result()
-                        all_chunks.extend(chunks)
+                        if chunks:  # Only extend if chunks were successfully processed
+                            all_chunks.extend(chunks)
                         pbar.set_postfix({'total_chunks': len(all_chunks)})
                         pbar.update(1)
                     except Exception as e:
@@ -234,6 +254,47 @@ class DocumentService:
     def __del__(self):
         """Cleanup on object destruction."""
         self.cleanup_instance()
+    
+    def _get_available_files(self, file_paths: List[Path]) -> List[Path]:
+        """Filter files to only include those available for processing."""
+        if not self.document_coordinator:
+            return file_paths  # No coordination, process all files
+        
+        available_files = []
+        for file_path in file_paths:
+            if self.document_coordinator.can_process_file(file_path):
+                available_files.append(file_path)
+        
+        return available_files
+    
+    def _process_single_file_with_coordination(self, file_path: Path) -> List[DocumentChunk]:
+        """Process a single file with document coordination to prevent contention."""
+        logger.debug(f"Processing file with coordination: {file_path}")
+        
+        # Try to acquire lock on the file
+        if self.document_coordinator and not self.document_coordinator.acquire_file_lock(file_path):
+            logger.info(f"File {file_path} is being processed by another instance, skipping")
+            return []
+        
+        try:
+            # Process the file
+            chunks = self._process_single_file(file_path)
+            
+            # Mark file as completed
+            if self.document_coordinator:
+                self.document_coordinator.mark_file_completed(file_path)
+            
+            return chunks
+            
+        except Exception as e:
+            # Mark file as failed and release lock
+            if self.document_coordinator:
+                self.document_coordinator.mark_file_failed(file_path, str(e))
+            raise
+        finally:
+            # Always release the lock
+            if self.document_coordinator:
+                self.document_coordinator.release_file_lock(file_path)
     
     def _process_single_file(self, file_path: Path) -> List[DocumentChunk]:
         """Process a single file and return its chunks."""

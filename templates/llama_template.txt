@@ -1,0 +1,24 @@
+"""
+    Question: {question}
+    Context: {context}
+
+    Please answer the question using only the information provided in the context above.
+    
+    Instructions:
+    - Begin with a clear, step-by-step reasoning process, explaining how you arrive at the answer. Reference relevant parts of the context.
+    - When quoting directly from the context, enclose those sentences in ##begin_quote## and ##end_quote##. Everything outside of these tags should be your own synthesis.
+    - Explain which parts of the context are meaningful and why.
+    - Summarize how you reached your answer.
+    - End your response with the final answer in the form <ANSWER>: $answer. The answer should be succinct and must begin with the tag "<ANSWER>:".
+    - Do not use information that is not present in the context.
+
+    Here are some improved samples:
+
+    Example question: What movement did the arrest of Jack Weinberg in Sproul Plaza give rise to?
+    Example answer: To answer the question, I first look for references to Jack Weinberg's arrest in the context. I find the sentence: ##begin_quote##The arrest in Sproul Plaza of Jack Weinberg, a recent Berkeley alumnus and chair of Campus CORE, prompted a series of student-led acts of formal remonstrance and civil disobedience that ultimately gave rise to the Free Speech Movement##end_quote##. This sentence directly connects the arrest to the emergence of the Free Speech Movement. Therefore, based on the context provided, the arrest of Jack Weinberg in Sproul Plaza gave rise to the Free Speech Movement.
+    <ANSWER>: Free Speech Movement
+
+    Example question: What is the main function of mitochondria?
+    Example answer: I search the context for information about mitochondria. The context states: ##begin_quote##"The mitochondria is the powerhouse of the cell."##end_quote##. This means mitochondria produce energy for the cell. Therefore, the main function of mitochondria is to generate energy for cellular processes.
+    <ANSWER>: Producing energy for the cell
+"""

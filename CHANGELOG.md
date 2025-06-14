@@ -5,6 +5,199 @@ All notable changes to the RAG Embeddings Database project will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-06-14
+
+### Added
+
+#### Embedding Prompt Template System
+- **Custom Prompt Templates**: Complete system for customizing embedding generation prompts
+  - Default embedding prompt template for general-purpose use
+  - Domain-specific templates for medical, legal, technical, academic, and business content
+  - Template variable system supporting content, document_type, metadata, chunk_index, and chunking_strategy
+  - Custom variable support through EMBEDDING_CUSTOM_PROMPT_VARIABLES configuration
+- **Template Configuration**: Environment variable and configuration support for prompt customization
+  - EMBEDDING_PROMPT_TEMPLATE: Path to custom prompt template file
+  - EMBEDDING_CUSTOM_PROMPT_VARIABLES: JSON configuration for custom template variables
+  - Templates directory with example domain-specific prompts
+  - Comprehensive documentation and best practices guide
+- **Kubernetes Template Support**: ConfigMap-based template distribution for containerized deployments
+  - Templates ConfigMap with built-in domain-specific templates
+  - Volume mounting for template access in Kubernetes pods
+  - Production-ready template management for multi-instance deployments
+
+#### Template Features
+- **Domain-Specific Templates**: Pre-built templates optimized for different content types
+  - Medical: Clinical terminology, drug information, diagnostic procedures
+  - Legal: Case law, statutes, contractual terms, jurisdictional information
+  - Technical: API documentation, code examples, configuration procedures
+  - Academic: Research methodologies, citations, theoretical frameworks
+  - Business: Corporate policies, processes, compliance requirements
+- **Variable System**: Dynamic template population with document and processing context
+  - Document content and metadata integration
+  - Processing pipeline information (chunking strategy, chunk index)
+  - Custom domain variables for specialized use cases
+- **Template Management**: Complete template lifecycle management
+  - Template validation and error handling
+  - Template inheritance and customization
+  - Version control and deployment integration
+
+### Enhanced
+
+#### Configuration System Updates
+- **Prompt Configuration**: Extended EmbeddingConfig with prompt template support
+  - embedding_prompt_template: Optional path to custom template file
+  - custom_prompt_variables: Dictionary for template variable customization
+  - Environment variable loading for prompt configuration
+  - Backward compatibility with existing configurations
+- **Kubernetes Configuration**: Enhanced deployment configurations for template support
+  - Templates ConfigMap for centralized template management
+  - Volume mounting configuration for template access
+  - Environment variables for template path configuration
+
+#### Documentation Enhancements
+- **README Template Section**: Comprehensive prompt customization documentation
+  - Quick start guide for custom templates
+  - Domain-specific template examples
+  - Template variable reference
+  - Configuration examples and best practices
+- **Template Documentation**: Complete template system documentation
+  - Template creation guidelines
+  - Variable system explanation
+  - Domain-specific customization examples
+  - Kubernetes deployment instructions
+
+### Technical Details
+- **Template System Architecture**: Clean, extensible template management system
+  - File-based template loading with validation
+  - Variable substitution system with error handling
+  - Template inheritance and customization support
+  - Environment-specific template configuration
+- **Kubernetes Integration**: Production-ready template deployment
+  - ConfigMap-based template distribution
+  - Volume mounting for containerized access
+  - Multi-instance template sharing and management
+  - Template versioning and updates
+
+## [1.5.0] - 2025-06-14
+
+### Added
+
+#### Document Coordination System
+- **Document-Level Contention Prevention**: Comprehensive system to prevent multiple instances from processing the same documents
+  - File-based document locking with exclusive access control
+  - Document status tracking (processing, completed, failed) with persistent storage
+  - Automatic retry logic for failed documents with configurable retry limits
+  - Stale lock detection and automatic cleanup with configurable timeouts
+  - Hash-based document identification using file path and modification time
+- **Document Coordination CLI Commands**: Management tools for document processing coordination
+  - `--list-instances`: Display all active instances and their processing status
+  - `--cleanup-locks`: Remove stale document locks from coordination directory
+  - `--reset-failed`: Reset failed documents to allow reprocessing
+  - `--disable-coordination`: Option to disable coordination for single-instance scenarios
+- **Kubernetes Document Coordination Support**: Production-ready deployment with document coordination
+  - Persistent Volume Claim for coordination storage across pod restarts
+  - Environment variables for document coordination configuration
+  - Enhanced deployment documentation with coordination monitoring
+- **DocumentCoordinator Class**: Core coordination engine with enterprise features
+  - JSON-based document registry with atomic operations
+  - File-based locking using fcntl for reliable cross-process coordination
+  - Heartbeat monitoring and instance timeout detection
+  - Comprehensive error handling and recovery mechanisms
+  - Thread-safe operations with proper file locking
+
+#### Enhanced Multi-Instance Processing
+- **Document Partitioning Strategy**: Intelligent work distribution across multiple instances
+  - Automatic file availability checking before processing
+  - Fair work distribution without duplicate processing
+  - Instance-specific path suggestions to prevent output conflicts
+  - Graceful handling of instance failures and recovery
+- **Coordination Storage**: Persistent coordination state management
+  - Shared coordination directory with proper permissions
+  - Document registry tracking all file processing states
+  - Lock directory for active processing indicators
+  - Automatic cleanup of orphaned coordination files
+
+#### Production Features
+- **Enterprise-Grade Reliability**: Robust error handling and recovery
+  - Configurable retry limits with exponential backoff
+  - Automatic stale lock cleanup with configurable timeouts
+  - Process isolation with independent failure handling
+  - Comprehensive logging for debugging and monitoring
+- **Scalability Enhancements**: Support for dozens of concurrent instances
+  - Efficient coordination with minimal overhead
+  - Lock-free read operations for performance
+  - Automatic resource cleanup and garbage collection
+  - Memory-efficient document tracking
+
+### Enhanced
+
+#### DocumentService Integration
+- **Document Coordination Integration**: Seamless integration with existing document processing
+  - Automatic coordination when multiple instances detected
+  - Fallback to single-instance mode when coordination disabled
+  - Enhanced error handling for coordination failures
+  - Heartbeat updates during processing for instance monitoring
+- **Processing Flow Enhancement**: Improved document processing with coordination
+  - Pre-processing file availability checks
+  - Lock acquisition before document processing
+  - Status updates throughout processing lifecycle
+  - Automatic cleanup on processing completion or failure
+
+#### Kubernetes Deployment Updates
+- **Enhanced Configuration**: Updated Kubernetes configurations for document coordination
+  - Added coordination PVC for persistent state storage
+  - Environment variables for coordination settings
+  - Resource limits for coordination storage
+  - Storage class configuration for different cloud providers
+- **Monitoring and Management**: Comprehensive monitoring tools for coordinated deployments
+  - Document processing status monitoring commands
+  - Lock file inspection and cleanup tools
+  - Instance coordination status checking
+  - Performance metrics for coordinated processing
+
+#### Documentation Enhancements
+- **Deployment Guide Updates**: Enhanced documentation for document coordination
+  - Document coordination monitoring sections
+  - Troubleshooting guide for contention issues
+  - Performance tuning recommendations
+  - Best practices for multi-instance deployments
+- **CLI Documentation**: Updated CLI help and examples
+  - Document coordination command documentation
+  - Multi-instance usage examples
+  - Troubleshooting command reference
+  - Coordination status checking guides
+
+### Fixed
+- **Document Contention Prevention**: Eliminated race conditions in document processing
+  - Multiple instances no longer process the same documents simultaneously
+  - Prevents data corruption from concurrent file access
+  - Resolves potential deadlocks in multi-instance scenarios
+- **File System Race Conditions**: Comprehensive file locking implementation
+  - Atomic file operations for document registry updates
+  - Exclusive locking for processing state changes
+  - Proper cleanup of temporary files and locks
+- **Resource Management**: Improved resource cleanup and management
+  - Automatic cleanup of stale coordination files
+  - Proper handling of interrupted processing
+  - Memory-efficient coordination state tracking
+
+### Technical Details
+- **DocumentCoordinator Architecture**: Clean, maintainable coordination implementation
+  - Abstract coordination interface for future extensibility
+  - Comprehensive error handling with proper recovery
+  - Thread-safe operations with minimal performance impact
+  - Configurable timeouts and retry logic
+- **Integration Testing**: Comprehensive test suite for coordination features
+  - Multi-instance coordination testing
+  - Concurrent processing simulation
+  - Stale lock cleanup verification
+  - Error recovery testing
+- **Performance Optimization**: Efficient coordination with minimal overhead
+  - Lock-free read operations for file availability checking
+  - Batched registry updates for improved performance
+  - Automatic cleanup of coordination state
+  - Memory-efficient document tracking
+
 ## [1.4.0] - 2025-06-14
 
 ### Added

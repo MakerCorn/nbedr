@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nbedr
+
+resources:
+- ../base/namespace.yaml
+- ../base/configmap.yaml
+- ../base/pvc.yaml
+- ../base/deployment.yaml
+- ../base/service.yaml
+- service-account.yaml
+
+patchesStrategicMerge:
+- deployment-patch.yaml
+- pvc-patch.yaml
+
+configMapGenerator:
+- name: nbedr-eks-config
+  literals:
+  - CLOUD_PROVIDER=aws
+  - AWS_REGION=us-west-2
+  - AWS_S3_BUCKET=your-s3-bucket
+  - AWS_S3_PREFIX=nbedr-data/
+  - EKS_CLUSTER_NAME=your-eks-cluster
+
+secretGenerator:
+- name: nbedr-eks-secrets
+  literals:
+  - AWS_ACCESS_KEY_ID=your_aws_access_key
+  - AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+
+images:
+- name: nbedr
+  newName: your-account-id.dkr.ecr.us-west-2.amazonaws.com/nbedr
+  newTag: latest
+
+replicas:
+- name: nbedr-deployment
+  count: 4
+
+commonLabels:
+  environment: production
+  cloud: aws
+  platform: eks

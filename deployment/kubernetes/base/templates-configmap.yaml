@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nbedr-templates
+  namespace: nbedr
+  labels:
+    app.kubernetes.io/name: nbedr
+    app.kubernetes.io/component: templates
+data:
+  embedding_prompt_template.txt: |
+    """
+    Default embedding prompt for document processing.
+
+    This template is used to provide context and instructions for generating embeddings from document content.
+    You can customize this prompt to improve the quality and relevance of your embeddings for specific use cases.
+
+    Variables available:
+    - {content}: The document content to be embedded
+    - {document_type}: Type of document (pdf, txt, json, etc.)
+    - {metadata}: Additional metadata about the document
+
+    Instructions for the embedding model:
+    Generate a high-quality vector embedding for the following document content. 
+    The embedding should capture the semantic meaning, key concepts, and contextual information 
+    to enable effective similarity search and retrieval in a RAG (Retrieval-Augmented Generation) system.
+
+    Document Type: {document_type}
+    Content: {content}
+
+    Focus on understanding the main themes, technical concepts, factual information, 
+    and relationships described in the content to create meaningful embeddings.
+    """
+  
+  medical_template.txt: |
+    """
+    Medical domain embedding template for healthcare and clinical documents.
+    
+    Generate embeddings for medical literature that capture clinical concepts effectively.
+
+    Focus on:
+    - Medical terminology and procedures
+    - Drug names, dosages, and interactions
+    - Symptoms, diagnoses, and treatment protocols
+    - Clinical outcomes and research findings
+    - Medical device information and usage
+
+    Document Type: {document_type}
+    Content: {content}
+    Metadata: {metadata}
+
+    Ensure embeddings enable accurate retrieval for medical information systems
+    while maintaining clinical accuracy and context.
+    """
+  
+  legal_template.txt: |
+    """
+    Legal domain embedding template for legal documents and case law.
+    
+    Generate embeddings for legal documents optimized for legal research and analysis.
+
+    Focus on:
+    - Legal terminology and concepts
+    - Case citations and precedents
+    - Statutory references and regulations
+    - Contractual terms and legal obligations
+    - Jurisdictional information
+    - Legal procedures and requirements
+
+    Document Type: {document_type}
+    Chunk: {chunk_index} of document
+    Content: {content}
+
+    Prioritize legal concepts and relationships for accurate legal document retrieval
+    and ensure proper context for legal research applications.
+    """
+  
+  technical_template.txt: |
+    """
+    Technical documentation embedding template for API docs, manuals, and technical content.
+    
+    Generate embeddings for technical documentation emphasizing:
+
+    Focus on:
+    - API endpoints, parameters, and responses
+    - Code examples and syntax
+    - Configuration options and settings
+    - Error messages and troubleshooting steps
+    - System requirements and dependencies
+    - Installation and setup procedures
+
+    Document Type: {document_type}
+    Content: {content}
+    Metadata: {metadata}
+
+    Optimize embeddings for developer searches and technical support scenarios
+    while preserving technical accuracy and implementation details.
+    """
+  
+  academic_template.txt: |
+    """
+    Academic research embedding template for scholarly content and publications.
+    
+    Generate embeddings for academic content focusing on:
+
+    Focus on:
+    - Research methodologies and findings
+    - Academic terminology and concepts
+    - Citations and references
+    - Hypothesis and conclusions
+    - Data analysis and results
+    - Theoretical frameworks
+
+    Document Type: {document_type}
+    Content: {content}
+    Metadata: {metadata}
+
+    Ensure embeddings support academic research queries and maintain
+    scholarly context for educational and research applications.
+    """
+  
+  business_template.txt: |
+    """
+    Business content embedding template for corporate documents and policies.
+    
+    Generate embeddings for business content emphasizing:
+
+    Focus on:
+    - Business processes and procedures
+    - Corporate policies and guidelines
+    - Financial information and metrics
+    - Strategic planning and objectives
+    - Organizational structure and roles
+    - Compliance and regulatory requirements
+
+    Document Type: {document_type}
+    Content: {content}
+    Metadata: {metadata}
+
+    Optimize embeddings for business searches and corporate knowledge management
+    while maintaining professional context and accuracy.
+    """

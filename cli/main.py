@@ -235,6 +235,16 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
                         help="Path to .env file for configuration")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Enable verbose logging")
+    
+    # Document coordination arguments
+    parser.add_argument("--disable-coordination", action="store_true",
+                        help="Disable document coordination (not recommended for multi-instance)")
+    parser.add_argument("--list-instances", action="store_true",
+                        help="List active instances and exit")
+    parser.add_argument("--cleanup-locks", action="store_true",
+                        help="Clean up stale document locks and exit")
+    parser.add_argument("--reset-failed", action="store_true",
+                        help="Reset failed documents for reprocessing and exit")
 
 def override_config_from_args(config: EmbeddingConfig, args: argparse.Namespace) -> EmbeddingConfig:
     """Override configuration with command line arguments."""
@@ -471,6 +481,62 @@ def handle_list_instances(args: argparse.Namespace) -> None:
         logger.error(f"Failed to list instances: {e}")
         sys.exit(1)
 
+def handle_cleanup_locks(args: argparse.Namespace) -> None:
+    """Handle cleanup-locks command."""
+    from core.utils.instance_coordinator import create_instance_coordinator
+    from core.utils.document_coordinator import DocumentCoordinator
+    
+    try:
+        config = get_config(args.env_file)
+        coordinator = create_instance_coordinator(config)
+        
+        if coordinator.register_instance():
+            doc_coordinator = DocumentCoordinator(
+                coordination_dir=coordinator.coordination_dir,
+                instance_id=coordinator.instance_id
+            )
+            
+            print("\n🧹 Cleaning up stale document locks...")
+            doc_coordinator.cleanup_stale_locks()
+            print("✅ Stale locks cleaned up successfully")
+            
+            coordinator.unregister_instance()
+        else:
+            print("❌ Failed to register instance for cleanup")
+            sys.exit(1)
+            
+    except Exception as e:
+        logger.error(f"Failed to cleanup locks: {e}")
+        sys.exit(1)
+
+def handle_reset_failed(args: argparse.Namespace) -> None:
+    """Handle reset-failed command."""
+    from core.utils.instance_coordinator import create_instance_coordinator
+    from core.utils.document_coordinator import DocumentCoordinator
+    
+    try:
+        config = get_config(args.env_file)
+        coordinator = create_instance_coordinator(config)
+        
+        if coordinator.register_instance():
+            doc_coordinator = DocumentCoordinator(
+                coordination_dir=coordinator.coordination_dir,
+                instance_id=coordinator.instance_id
+            )
+            
+            print("\n🔄 Resetting failed documents for reprocessing...")
+            doc_coordinator.reset_failed_files()
+            print("✅ Failed documents reset successfully")
+            
+            coordinator.unregister_instance()
+        else:
+            print("❌ Failed to register instance for reset")
+            sys.exit(1)
+            
+    except Exception as e:
+        logger.error(f"Failed to reset failed documents: {e}")
+        sys.exit(1)
+
 def handle_create_embeddings(args: argparse.Namespace) -> None:
     """Handle create-embeddings command."""
     logger.info("Loading configuration for embedding creation")
@@ -479,9 +545,17 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
     # Override with command line arguments
     config = override_config_from_args(config, args)
     
-    # Handle list instances command
+    # Handle coordination commands
     if hasattr(args, 'list_instances') and args.list_instances:
         handle_list_instances(args)
+        return
+    
+    if hasattr(args, 'cleanup_locks') and args.cleanup_locks:
+        handle_cleanup_locks(args)
+        return
+    
+    if hasattr(args, 'reset_failed') and args.reset_failed:
+        handle_reset_failed(args)
         return
     
     # Validate required arguments

@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nbedr
+
+resources:
+- ../base/namespace.yaml
+- ../base/configmap.yaml
+- ../base/pvc.yaml
+- ../base/deployment.yaml
+- ../base/service.yaml
+- service-account.yaml
+
+patchesStrategicMerge:
+- deployment-patch.yaml
+- pvc-patch.yaml
+
+configMapGenerator:
+- name: nbedr-gke-config
+  literals:
+  - CLOUD_PROVIDER=gcp
+  - GOOGLE_CLOUD_PROJECT=your-project-id
+  - GCS_BUCKET=your-gcs-bucket
+  - GCS_PREFIX=nbedr-data/
+  - GKE_CLUSTER_NAME=your-gke-cluster
+  - GKE_CLUSTER_LOCATION=us-central1-a
+
+secretGenerator:
+- name: nbedr-gke-secrets
+  files:
+  - gcp-service-account.json
+
+images:
+- name: nbedr
+  newName: gcr.io/your-project-id/nbedr
+  newTag: latest
+
+replicas:
+- name: nbedr-deployment
+  count: 6
+
+commonLabels:
+  environment: production
+  cloud: gcp
+  platform: gke

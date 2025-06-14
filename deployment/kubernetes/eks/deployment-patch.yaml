@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbedr-deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: nbedr-eks-service-account
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        kubernetes.io/arch: amd64
+        eks.amazonaws.com/nodegroup: nbedr-workers
+      containers:
+      - name: nbedr
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-eks-config
+              key: AWS_REGION
+        - name: AWS_S3_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-eks-config
+              key: AWS_S3_BUCKET
+        - name: AWS_S3_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-eks-config
+              key: AWS_S3_PREFIX
+        - name: EKS_CLUSTER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-eks-config
+              key: EKS_CLUSTER_NAME
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-eks-config
+              key: AWS_REGION
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        # Use IAM roles for service accounts instead of access keys
+        # Remove AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from env

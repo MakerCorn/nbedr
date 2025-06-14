@@ -1323,6 +1323,137 @@ LLAMACPP_API_KEY=optional_api_key
 | **Ollama** | Very Low | Medium | Medium |
 | **Llama.cpp** | Very Low | Variable | Medium |
 
+### 📝 **Customizing Embedding Prompts**
+
+NBEDR allows you to customize the prompts used for generating embeddings to improve quality and relevance for your specific domain and use case.
+
+#### **Quick Start**
+
+1. **Use Default Template**: NBEDR includes a default embedding prompt template at `templates/embedding_prompt_template.txt`
+
+2. **Set Custom Template Path**:
+   ```bash
+   export EMBEDDING_PROMPT_TEMPLATE="templates/my_custom_template.txt"
+   ```
+
+3. **Or Configure in Environment**:
+   ```env
+   EMBEDDING_PROMPT_TEMPLATE=/path/to/your/custom_template.txt
+   ```
+
+#### **Creating Custom Prompt Templates**
+
+**Example Medical Domain Template** (`templates/medical_template.txt`):
+```
+Generate embeddings for medical literature that capture clinical concepts effectively.
+
+Focus on:
+- Medical terminology and procedures: {content}
+- Drug names, dosages, and interactions
+- Symptoms, diagnoses, and treatment protocols
+- Clinical outcomes and research findings
+
+Document Type: {document_type}
+Content: {content}
+Metadata: {metadata}
+
+Ensure embeddings enable accurate retrieval for medical information systems.
+```
+
+**Example Legal Domain Template** (`templates/legal_template.txt`):
+```
+Generate embeddings for legal documents optimized for legal research and analysis.
+
+Focus on:
+- Legal terminology and concepts
+- Case citations and precedents: {content}
+- Statutory references and regulations
+- Contractual terms and legal obligations
+
+Document Type: {document_type}
+Chunk: {chunk_index} of document
+Content: {content}
+
+Prioritize legal concepts and relationships for accurate legal document retrieval.
+```
+
+#### **Available Template Variables**
+
+Use these variables in your custom templates:
+
+- `{content}`: The document content to be embedded
+- `{document_type}`: File type (pdf, txt, json, pptx, etc.)
+- `{metadata}`: Additional document metadata (file size, source, etc.)
+- `{chunk_index}`: Index of the current chunk within the document
+- `{chunking_strategy}`: The chunking method used (semantic, fixed, sentence)
+
+#### **Custom Variables**
+
+Add your own variables using the `EMBEDDING_CUSTOM_PROMPT_VARIABLES` environment variable:
+
+```bash
+export EMBEDDING_CUSTOM_PROMPT_VARIABLES='{"domain": "healthcare", "use_case": "clinical_research"}'
+```
+
+Then use them in your template:
+```
+Generate embeddings for {domain} content optimized for {use_case}.
+Content: {content}
+```
+
+#### **Configuration Examples**
+
+**Using Environment Variables**:
+```bash
+# Set custom template
+export EMBEDDING_PROMPT_TEMPLATE="templates/technical_docs_template.txt"
+
+# Add custom variables
+export EMBEDDING_CUSTOM_PROMPT_VARIABLES='{"company": "TechCorp", "product": "API"}'
+
+# Run with custom prompts
+python nbedr.py create-embeddings --datapath ./docs --doctype pdf
+```
+
+**Using CLI Arguments**:
+```bash
+python nbedr.py create-embeddings \
+  --datapath ./documents \
+  --doctype pdf \
+  --embedding-prompt-template templates/my_template.txt
+```
+
+#### **Template Best Practices**
+
+1. **Be Domain-Specific**: Include terminology and concepts specific to your field
+2. **Provide Context**: Explain the intended use case for the embeddings
+3. **Keep It Focused**: Avoid overly long prompts that might confuse the model
+4. **Test and Iterate**: Experiment with different prompts and measure embedding quality
+5. **Use Variables**: Leverage template variables for dynamic content insertion
+
+#### **Template Examples by Domain**
+
+See the `templates/` directory for example templates:
+- `embedding_prompt_template.txt` - Default general-purpose template
+- `templates/README.md` - Complete template documentation with examples
+
+**Quick Domain Templates**:
+
+**Technical Documentation**:
+```bash
+export EMBEDDING_PROMPT_TEMPLATE="templates/tech_docs_template.txt"
+```
+
+**Academic Research**:
+```bash
+export EMBEDDING_PROMPT_TEMPLATE="templates/academic_template.txt"
+```
+
+**Business Content**:
+```bash
+export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
+```
+
 ### Vector Databases
 
 #### **FAISS** (Facebook AI Similarity Search)

@@ -1,0 +1,22 @@
+"""
+Default embedding prompt for document processing.
+
+This template is used to provide context and instructions for generating embeddings from document content.
+You can customize this prompt to improve the quality and relevance of your embeddings for specific use cases.
+
+Variables available:
+- {content}: The document content to be embedded
+- {document_type}: Type of document (pdf, txt, json, etc.)
+- {metadata}: Additional metadata about the document
+
+Instructions for the embedding model:
+Generate a high-quality vector embedding for the following document content. 
+The embedding should capture the semantic meaning, key concepts, and contextual information 
+to enable effective similarity search and retrieval in a RAG (Retrieval-Augmented Generation) system.
+
+Document Type: {document_type}
+Content: {content}
+
+Focus on understanding the main themes, technical concepts, factual information, 
+and relationships described in the content to create meaningful embeddings.
+"""

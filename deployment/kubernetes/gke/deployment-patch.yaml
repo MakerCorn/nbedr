@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbedr-deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: nbedr-gke-service-account
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        kubernetes.io/arch: amd64
+        cloud.google.com/gke-nodepool: nbedr-pool
+      containers:
+      - name: nbedr
+        env:
+        - name: GOOGLE_CLOUD_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-gke-config
+              key: GOOGLE_CLOUD_PROJECT
+        - name: GCS_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-gke-config
+              key: GCS_BUCKET
+        - name: GCS_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-gke-config
+              key: GCS_PREFIX
+        - name: GKE_CLUSTER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-gke-config
+              key: GKE_CLUSTER_NAME
+        - name: GKE_CLUSTER_LOCATION
+          valueFrom:
+            configMapKeyRef:
+              name: nbedr-gke-config
+              key: GKE_CLUSTER_LOCATION
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/secrets/google/gcp-service-account.json
+        volumeMounts:
+        - name: gcp-credentials
+          mountPath: /var/secrets/google
+          readOnly: true
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: gcp-credentials
+        secret:
+          secretName: nbedr-gke-secrets
+          items:
+          - key: gcp-service-account.json
+            path: gcp-service-account.json

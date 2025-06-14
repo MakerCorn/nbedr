@@ -1,0 +1,46 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nbedr
+
+resources:
+- ../base/namespace.yaml
+- ../base/configmap.yaml
+- ../base/pvc.yaml
+- ../base/deployment.yaml
+- ../base/service.yaml
+
+patchesStrategicMerge:
+- deployment-patch.yaml
+- pvc-patch.yaml
+
+configMapGenerator:
+- name: nbedr-aks-config
+  literals:
+  - CLOUD_PROVIDER=azure
+  - AZURE_STORAGE_ACCOUNT=your_storage_account
+  - AZURE_CONTAINER_NAME=nbedr-data
+  - AZURE_RESOURCE_GROUP=your_resource_group
+  - AZURE_LOCATION=eastus
+
+secretGenerator:
+- name: nbedr-aks-secrets
+  literals:
+  - AZURE_STORAGE_KEY=your_storage_key
+  - AZURE_CLIENT_ID=your_client_id
+  - AZURE_CLIENT_SECRET=your_client_secret
+  - AZURE_TENANT_ID=your_tenant_id
+
+images:
+- name: nbedr
+  newName: your-acr-registry.azurecr.io/nbedr
+  newTag: latest
+
+replicas:
+- name: nbedr-deployment
+  count: 5
+
+commonLabels:
+  environment: production
+  cloud: azure
+  platform: aks
