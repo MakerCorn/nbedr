@@ -5,7 +5,7 @@ import os
 env_prefix_whitelist = ["OPENAI", "AZURE_OPENAI"]
 
 
-def read_env_config(use_prefix: str, env: dict = os.environ) -> str:
+def read_env_config(use_prefix: str, env=os.environ) -> dict:
     """Reads whitelisted environment variables and returns them in a dictionary.
 
     Overrides the whitelisted environment variable with ones prefixed with the given use_prefix if available.
@@ -17,13 +17,14 @@ def read_env_config(use_prefix: str, env: dict = os.environ) -> str:
     Returns:
         str: A dictionary with the whitelisted environment variables.
     """
-    config = {}
+    config: dict = {}
     for prefix in [None, use_prefix]:
-        read_env_config_prefixed(prefix, config, env)
+        if prefix:
+            read_env_config_prefixed(prefix, config, env)
     return config
 
 
-def read_env_config_prefixed(use_prefix: str, config: dict, env: dict = os.environ) -> str:
+def read_env_config_prefixed(use_prefix: str, config: dict, env=os.environ) -> None:
     """Reads whitelisted environment variables prefixed with use_prefix and adds them to the dictionary
     with use_prefix stripped.
 
@@ -58,7 +59,7 @@ def format_prefix(prefix: str) -> str:
 
 
 @contextlib.contextmanager
-def set_env(**environ: dict[str, str]):
+def set_env(**environ: str):
     """Temporarily set the process environment variables.
 
     Warning, this is not thread safe as the environment is updated for the whole process.

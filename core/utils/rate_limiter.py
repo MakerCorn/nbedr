@@ -265,7 +265,7 @@ class RateLimiter:
         if estimated_tokens and self.config.tokens_per_minute:
             # Scale token cost based on estimated token usage
             token_cost_ratio = estimated_tokens / (self.config.tokens_per_minute / 60.0)
-            tokens_needed = max(1, token_cost_ratio)
+            tokens_needed = max(1, int(token_cost_ratio))
 
         if self._tokens >= tokens_needed:
             self._tokens -= tokens_needed

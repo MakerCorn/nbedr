@@ -12,8 +12,8 @@ try:
     from dotenv import load_dotenv
 except ImportError:
     # Fallback for environments where python-dotenv is not available
-    def load_dotenv(*args, **kwargs):
-        pass
+    def load_dotenv(*args, **kwargs) -> bool:  # type: ignore[misc]
+        return False
 
 
 import json

@@ -97,9 +97,13 @@ class S3InputSource(BaseInputSource):
     async def validate(self) -> None:
         """Validate S3 bucket access and credentials."""
         try:
+            if not self.s3_client:
+                raise SourceValidationError("S3 client not initialized")
             # Test bucket access by listing objects with limit
+            client = self.s3_client
+            assert client is not None
             response = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=self.prefix, MaxKeys=1)
+                None, lambda: client.list_objects_v2(Bucket=self.bucket_name, Prefix=self.prefix, MaxKeys=1)
             )
 
             self._validated = True
@@ -138,8 +142,12 @@ class S3InputSource(BaseInputSource):
                     list_params["ContinuationToken"] = continuation_token
 
                 # List objects
+                if not self.s3_client:
+                    raise SourceValidationError("S3 client not initialized")
+                client = self.s3_client
+                assert client is not None
                 response = await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: self.s3_client.list_objects_v2(**list_params)
+                    None, lambda: client.list_objects_v2(**list_params)
                 )
 
                 # Process objects
@@ -178,9 +186,13 @@ class S3InputSource(BaseInputSource):
     async def get_document(self, document: SourceDocument) -> SourceDocument:
         """Retrieve document content from S3."""
         try:
+            if not self.s3_client:
+                raise SourceValidationError("S3 client not initialized")
             # Download object content
+            client = self.s3_client
+            assert client is not None
             response = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.s3_client.get_object(Bucket=self.bucket_name, Key=document.metadata["s3_key"])
+                None, lambda: client.get_object(Bucket=self.bucket_name, Key=document.metadata["s3_key"])
             )
 
             # Read content

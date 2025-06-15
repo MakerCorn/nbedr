@@ -105,7 +105,7 @@ class BaseEmbeddingProvider(ABC):
         Returns:
             Default model name
         """
-        return self.config.get("default_model", "")
+        return str(self.config.get("default_model", ""))
 
     def get_max_batch_size(self) -> int:
         """Get the maximum batch size for this provider.
@@ -113,7 +113,7 @@ class BaseEmbeddingProvider(ABC):
         Returns:
             Maximum batch size
         """
-        return self.config.get("max_batch_size", 100)
+        return int(self.config.get("max_batch_size", 100))
 
     def supports_async(self) -> bool:
         """Check if provider supports async operations.

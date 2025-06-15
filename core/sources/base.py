@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ class BaseInputSource(ABC):
         """
         pass
 
-    async def get_documents(self, documents: List[SourceDocument]) -> Iterator[SourceDocument]:
+    async def get_documents(self, documents: List[SourceDocument]) -> AsyncGenerator[SourceDocument, None]:
         """
         Retrieve multiple documents efficiently.
 
@@ -197,7 +197,7 @@ class BaseInputSource(ABC):
 
         # Calculate statistics
         total_size = sum(doc.size or 0 for doc in supported_docs)
-        type_counts = {}
+        type_counts: Dict[str, int] = {}
         for doc in supported_docs:
             ext = doc.extension.lstrip(".")
             type_counts[ext] = type_counts.get(ext, 0) + 1
