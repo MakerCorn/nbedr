@@ -1,6 +1,7 @@
 """
 Google Vertex AI embedding provider implementation.
 """
+
 # mypy: disable-error-code="assignment,misc,arg-type,no-any-return"
 
 import asyncio

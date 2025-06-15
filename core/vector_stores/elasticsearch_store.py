@@ -1,6 +1,7 @@
 """
 AWS Elasticsearch (OpenSearch) vector store implementation.
 """
+
 # mypy: disable-error-code="attr-defined,dict-item,unreachable"
 
 import json

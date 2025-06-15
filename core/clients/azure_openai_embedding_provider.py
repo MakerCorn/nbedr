@@ -1,6 +1,7 @@
 """
 Azure OpenAI embedding provider implementation.
 """
+
 # mypy: disable-error-code="assignment,misc,arg-type,no-any-return,has-type"
 
 import asyncio

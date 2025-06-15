@@ -1,6 +1,7 @@
 """
 FAISS vector store implementation.
 """
+
 # mypy: disable-error-code="attr-defined,unreachable"
 
 import fcntl

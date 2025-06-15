@@ -2,7 +2,7 @@
 Factory for creating input source instances.
 """
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from .base import BaseInputSource, InputSourceConfig, SourceValidationError
 from .local import LocalInputSource
@@ -141,7 +141,11 @@ class InputSourceFactory:
 
     @classmethod
     def create_sharepoint_source(
-        cls, site_url: str, library_path: str = "Shared Documents", credentials: Optional[Dict[str, Any]] = None, **kwargs
+        cls,
+        site_url: str,
+        library_path: str = "Shared Documents",
+        credentials: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> SharePointInputSource:
         """Convenience method to create a SharePoint source."""
         if not site_url.endswith("/"):
