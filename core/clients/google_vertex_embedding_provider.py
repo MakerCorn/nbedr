@@ -142,7 +142,8 @@ class GoogleVertexEmbeddingProvider(BaseEmbeddingProvider):
 
         if not self.initialized:
             logger.warning("Vertex AI not available, returning mock embeddings")
-            mock_embeddings = self._generate_mock_embeddings(texts, int(self.MODELS.get(model, {}).get("dimensions", 768)))  # type: ignore[arg-type]
+            dimensions = int(self.MODELS.get(model, {}).get("dimensions", 768))
+            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)  # type: ignore[arg-type]
             return EmbeddingResult(
                 embeddings=mock_embeddings,
                 model=model,
@@ -155,7 +156,8 @@ class GoogleVertexEmbeddingProvider(BaseEmbeddingProvider):
         except Exception as e:
             logger.error(f"Failed to load model {model}: {e}")
             # Fall back to mock embeddings
-            mock_embeddings = self._generate_mock_embeddings(texts, int(self.MODELS.get(model, {}).get("dimensions", 768)))  # type: ignore[arg-type]
+            dimensions = int(self.MODELS.get(model, {}).get("dimensions", 768))
+            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)  # type: ignore[arg-type]
             return EmbeddingResult(
                 embeddings=mock_embeddings,
                 model=model,
