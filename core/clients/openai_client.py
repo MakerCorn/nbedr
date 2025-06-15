@@ -13,10 +13,23 @@ OpenAIClientType = TypeVar("OpenAIClientType")
 try:
     from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 except ImportError:
-    AzureOpenAI = cast(Type[Any], None)
-    OpenAI = cast(Type[Any], None)
-    AsyncAzureOpenAI = cast(Type[Any], None)
-    AsyncOpenAI = cast(Type[Any], None)
+    # Create mock classes for when OpenAI is not available
+    class _MockAzureOpenAI:
+        pass
+
+    class _MockOpenAI:
+        pass
+
+    class _MockAsyncAzureOpenAI:
+        pass
+
+    class _MockAsyncOpenAI:
+        pass
+
+    AzureOpenAI = _MockAzureOpenAI  # type: ignore
+    OpenAI = _MockOpenAI  # type: ignore
+    AsyncAzureOpenAI = _MockAsyncAzureOpenAI  # type: ignore
+    AsyncOpenAI = _MockAsyncOpenAI  # type: ignore
 
 logger = logging.getLogger(__name__)
 

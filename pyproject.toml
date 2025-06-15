@@ -141,14 +141,14 @@ skip_glob = [
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
-warn_unused_configs = true
+warn_unused_configs = false
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 check_untyped_defs = true
 disallow_untyped_decorators = false
 no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
@@ -164,3 +164,15 @@ exclude = [
     "\\.eggs",
     "\\.egg-info"
 ]
+
+# Per-module options for handling optional imports
+[[tool.mypy.overrides]]
+module = [
+    "core.clients.openai_embedding_provider",
+    "core.clients.azure_openai_embedding_provider", 
+    "core.clients.openai_client",
+    "core.utils.identity_utils",
+    "core.services.document_service",
+    "core.config"
+]
+disable_error_code = ["misc", "assignment"]

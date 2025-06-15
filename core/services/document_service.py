@@ -35,7 +35,11 @@ try:
 
     PresentationCallable = Type[Callable[[Union[str, IO[bytes], None]], Any]]
 except ImportError:
-    Presentation = cast(Any, None)
+    # Create mock class for when python-pptx is not available
+    class _MockPresentation:
+        pass
+
+    Presentation = _MockPresentation  # type: ignore
     PresentationCallable = Type[Any]  # type: ignore[misc]
 
 try:
@@ -46,9 +50,19 @@ try:
     OpenAIEmbeddingsType = Type[OpenAIEmbeddings]
     AzureOpenAIEmbeddingsType = Type[AzureOpenAIEmbeddings]
 except ImportError:
-    SemanticChunker = cast(Any, None)
-    OpenAIEmbeddings = cast(Type[Any], None)
-    AzureOpenAIEmbeddings = cast(Type[Any], None)
+    # Create mock classes for when langchain is not available
+    class _MockSemanticChunker:
+        pass
+
+    class _MockOpenAIEmbeddings:
+        pass
+
+    class _MockAzureOpenAIEmbeddings:
+        pass
+
+    SemanticChunker = _MockSemanticChunker  # type: ignore
+    OpenAIEmbeddings = _MockOpenAIEmbeddings  # type: ignore
+    AzureOpenAIEmbeddings = _MockAzureOpenAIEmbeddings  # type: ignore
     SemanticChunkerType = Type[Any]  # type: ignore[misc]
     OpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]
     AzureOpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]

@@ -21,11 +21,24 @@ try:
 except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     AZURE_OPENAI_AVAILABLE = False
-    # Use cast to handle type assignments when imports fail
-    AzureOpenAI = cast(Type[Any], Any)
-    AsyncAzureOpenAI = cast(Type[Any], Any)
-    CreateEmbeddingResponse = cast(Type[Any], Any)
-    Embedding = cast(Type[Any], Any)
+
+    # Create mock types for when OpenAI is not available
+    class _MockAzureOpenAI:
+        pass
+
+    class _MockAsyncAzureOpenAI:
+        pass
+
+    class _MockCreateEmbeddingResponse:
+        pass
+
+    class _MockEmbedding:
+        pass
+
+    AzureOpenAI = _MockAzureOpenAI  # type: ignore
+    AsyncAzureOpenAI = _MockAsyncAzureOpenAI  # type: ignore
+    CreateEmbeddingResponse = _MockCreateEmbeddingResponse  # type: ignore
+    Embedding = _MockEmbedding  # type: ignore
 
 
 class AzureOpenAIEmbeddingProvider(BaseEmbeddingProvider):

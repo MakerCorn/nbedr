@@ -11,9 +11,13 @@ try:
     credential = DefaultAzureCredential()
     AZURE_AVAILABLE = True
 except ImportError:
-    DefaultAzureCredential = cast(Type[Any], None)
-    CredentialUnavailableError = Exception
-    credential = cast(Any, None)
+    # Create mock classes for when Azure identity is not available
+    class _MockDefaultAzureCredential:
+        pass
+
+    DefaultAzureCredential = _MockDefaultAzureCredential  # type: ignore
+    CredentialUnavailableError = Exception  # type: ignore
+    credential = None  # type: ignore
     AZURE_AVAILABLE = False
 
 log = logging.getLogger(__name__)
