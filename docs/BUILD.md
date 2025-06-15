@@ -272,7 +272,7 @@ dist/
 
 #### Package Metadata
 
-- **Name**: `rag-embeddings-db`
+- **Name**: `nbedr`
 - **Entry Point**: `nbedr = cli.main:main`
 - **Dependencies**: Listed in `pyproject.toml`
 - **Optional Dependencies**: `[dev]`, `[cloud]`, `[all]`

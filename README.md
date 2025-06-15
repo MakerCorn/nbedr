@@ -833,8 +833,8 @@ class NBEDREmbeddings(Embeddings):
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/rag-embeddings-db.git
-cd rag-embeddings-db
+git clone https://github.com/your-org/nbedr.git
+cd nbedr
 
 # Install dependencies
 pip install -r requirements.txt
