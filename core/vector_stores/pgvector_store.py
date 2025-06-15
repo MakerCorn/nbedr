@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union, cast
 
 import asyncpg
-from asyncpg import Pool, Connection
+from asyncpg import Connection, Pool
 from asyncpg.pool import PoolConnectionProxy
 
 from ..models import DocumentChunk, VectorSearchResult

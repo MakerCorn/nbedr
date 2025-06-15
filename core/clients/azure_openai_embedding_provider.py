@@ -5,7 +5,7 @@ Azure OpenAI embedding provider implementation.
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional, TypeVar, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 logger = logging.getLogger(__name__)
 

@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional, Union, cast
 import aiohttp
 from aiohttp import ClientTimeout
 
-from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
 from ..utils.embedding_utils import normalize_embedding
+from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
 
 logger = logging.getLogger(__name__)
 

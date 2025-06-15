@@ -11,8 +11,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from math import ceil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Type, Union, IO, Callable, TypeVar, cast, Iterator
 from types import ModuleType
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, Type, TypeVar, Union, cast
 
 # Type variables for generic types
 T = TypeVar("T")

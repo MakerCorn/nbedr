@@ -4,12 +4,12 @@ OpenAI and Azure OpenAI client management for embeddings.
 
 import logging
 from os import environ
-from typing import Any, Dict, List, Optional, Union, Type, TypeVar, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 OpenAIClientType = TypeVar("OpenAIClientType")
 
 try:
-    from openai import AzureOpenAI, OpenAI, AsyncAzureOpenAI, AsyncOpenAI
+    from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 except ImportError:
     AzureOpenAI = None  # type: ignore
     OpenAI = None  # type: ignore

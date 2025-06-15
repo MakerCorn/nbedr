@@ -5,6 +5,7 @@ Embedding provider factory for creating provider instances.
 import logging
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
+from ..config import EmbeddingConfig
 from .aws_bedrock_embedding_provider import AWSBedrockEmbeddingProvider
 from .azure_openai_embedding_provider import AzureOpenAIEmbeddingProvider
 from .base_embedding_provider import BaseEmbeddingProvider
@@ -13,7 +14,6 @@ from .llamacpp_embedding_provider import LlamaCppEmbeddingProvider
 from .lmstudio_embedding_provider import LMStudioEmbeddingProvider
 from .ollama_embedding_provider import OllamaEmbeddingProvider
 from .openai_embedding_provider import OpenAIEmbeddingProvider
-from ..config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 

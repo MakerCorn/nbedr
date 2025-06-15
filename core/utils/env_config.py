@@ -1,6 +1,6 @@
 import contextlib
 import os
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 # List of environment variables prefixes that are allowed to be used for configuration.
 env_prefix_whitelist = ["OPENAI", "AZURE_OPENAI"]

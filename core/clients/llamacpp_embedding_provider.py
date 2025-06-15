@@ -6,22 +6,22 @@ import asyncio
 import json
 import logging
 import ssl
-from typing import Any, Dict, List, Optional, Union, cast, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
 # Define a type variable for float lists
 FloatList = List[float]
 
+import aiohttp
+from aiohttp import ClientTimeout
+
+from ..utils.embedding_utils import normalize_embedding
+
 # Import the base class method to use its type signature
-from .base_embedding_provider import BaseEmbeddingProvider
+from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
 
 # Add mypy configuration to ignore no-any-return errors in this file
 # mypy: disable-error-code="no-any-return"
 
-import aiohttp
-from aiohttp import ClientTimeout
-
-from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
-from ..utils.embedding_utils import normalize_embedding
 
 logger = logging.getLogger(__name__)
 
