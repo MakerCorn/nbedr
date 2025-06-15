@@ -22,10 +22,10 @@ except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     AZURE_OPENAI_AVAILABLE = False
     # Use Any for type annotations
-    AzureOpenAI = Any  # type: ignore[misc, assignment]
-    AsyncAzureOpenAI = Any  # type: ignore[misc, assignment]
-    CreateEmbeddingResponse = Any  # type: ignore[misc, assignment]
-    Embedding = Any  # type: ignore[misc, assignment]
+    AzureOpenAI = Any
+    AsyncAzureOpenAI = Any
+    CreateEmbeddingResponse = Any
+    Embedding = Any
 
 
 class AzureOpenAIEmbeddingProvider(BaseEmbeddingProvider):

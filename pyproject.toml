@@ -61,6 +61,7 @@ dev = [
     "mypy>=1.0.0",
     "flake8>=6.0.0",
     "bandit>=1.7.0",
+    "types-requests>=2.31.0",
 ]
 all = [
     # Cloud dependencies
@@ -82,6 +83,7 @@ all = [
     "mypy>=1.0.0",
     "flake8>=6.0.0",
     "bandit>=1.7.0",
+    "types-requests>=2.31.0",
 ]
 
 [project.scripts]

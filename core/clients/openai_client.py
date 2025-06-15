@@ -13,10 +13,10 @@ OpenAIClientType = TypeVar("OpenAIClientType")
 try:
     from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 except ImportError:
-    AzureOpenAI = None  # type: ignore
-    OpenAI = None  # type: ignore
-    AsyncAzureOpenAI = None  # type: ignore
-    AsyncOpenAI = None  # type: ignore
+    AzureOpenAI = None
+    OpenAI = None
+    AsyncAzureOpenAI = None
+    AsyncOpenAI = None
 
 logger = logging.getLogger(__name__)
 

@@ -2,6 +2,7 @@
 Shared utility functions and helpers for RAG embedding database application.
 """
 
+from .embedding_utils import cosine_similarity, euclidean_distance, normalize_embedding
 from .env_config import get_env_variable, load_env_file, read_env_config, set_env
 from .file_utils import extract_random_jsonl_rows, split_jsonl_file
 from .identity_utils import get_azure_openai_token
@@ -19,4 +20,7 @@ __all__ = [
     "RateLimitConfig",
     "create_rate_limiter_from_config",
     "get_common_rate_limits",
+    "normalize_embedding",
+    "cosine_similarity",
+    "euclidean_distance",
 ]

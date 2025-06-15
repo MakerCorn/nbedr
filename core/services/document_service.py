@@ -27,16 +27,16 @@ try:
 
     PypdfModule = Type[ModuleType]
 except ImportError:
-    pypdf = None  # type: ignore
-    PypdfModule = Type[Any]  # type: ignore
+    pypdf = None
+    PypdfModule = Type[Any]  # type: ignore[misc]
 
 try:
     from pptx import Presentation
 
     PresentationCallable = Type[Callable[[Union[str, IO[bytes], None]], Any]]
 except ImportError:
-    Presentation = None  # type: ignore
-    PresentationCallable = Type[Any]  # type: ignore
+    Presentation = None
+    PresentationCallable = Type[Any]  # type: ignore[misc]
 
 try:
     from langchain_experimental.text_splitter import SemanticChunker
@@ -46,12 +46,12 @@ try:
     OpenAIEmbeddingsType = Type[OpenAIEmbeddings]
     AzureOpenAIEmbeddingsType = Type[AzureOpenAIEmbeddings]
 except ImportError:
-    SemanticChunker = None  # type: ignore
-    OpenAIEmbeddings = None  # type: ignore
-    AzureOpenAIEmbeddings = None  # type: ignore
-    SemanticChunkerType = Type[Any]  # type: ignore
-    OpenAIEmbeddingsType = Type[Any]  # type: ignore
-    AzureOpenAIEmbeddingsType = Type[Any]  # type: ignore
+    SemanticChunker = None
+    OpenAIEmbeddings = None
+    AzureOpenAIEmbeddings = None
+    SemanticChunkerType = Type[Any]  # type: ignore[misc]
+    OpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]
+    AzureOpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]
 
 try:
     from tqdm.auto import tqdm as tqdm_auto

@@ -12,7 +12,7 @@ try:
     from dotenv import load_dotenv
 except ImportError:
     # Fallback for environments where python-dotenv is not available
-    def load_dotenv(*args, **kwargs) -> bool:  # type: ignore[misc]
+    def load_dotenv(*args, **kwargs) -> bool:
         return False
 
 
