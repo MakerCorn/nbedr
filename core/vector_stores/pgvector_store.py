@@ -101,8 +101,8 @@ class PGVectorStore(BaseVectorStore):
                 table_exists = await conn.fetchval(
                     """
                     SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' 
+                        SELECT FROM information_schema.tables
+                        WHERE table_schema = 'public'
                         AND table_name = $1
                     );
                     """,

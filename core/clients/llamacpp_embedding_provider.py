@@ -8,16 +8,14 @@ import logging
 import ssl
 from typing import Any, Dict, List, Optional, TypeVar, Union, cast
 
-# Define a type variable for float lists
-FloatList = List[float]
-
 import aiohttp
 from aiohttp import ClientTimeout
 
 from ..utils.embedding_utils import normalize_embedding
-
-# Import the base class method to use its type signature
 from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
+
+# Define a type variable for float lists
+FloatList = List[float]
 
 # Add mypy configuration to ignore no-any-return errors in this file
 # mypy: disable-error-code="no-any-return"

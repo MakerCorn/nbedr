@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rag-embeddings-db"
+name = "nbedr"
 version = "1.0.0"
 description = "nBedR - RAG Embedding Toolkit - Tools for creating and managing embedding databases for Retrieval Augmented Generation"
 readme = "README.md"

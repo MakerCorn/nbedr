@@ -1,3 +1,6 @@
+import logging
+import time
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Type, TypeVar, cast
 
 T = TypeVar("T")
@@ -12,10 +15,6 @@ except ImportError:
     CredentialUnavailableError = Exception  # type: ignore
     credential = None  # type: ignore
     AZURE_AVAILABLE = False
-
-import logging
-import time
-from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 

@@ -7,6 +7,8 @@ import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
+from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -19,16 +21,11 @@ try:
 except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     OPENAI_AVAILABLE = False
-    # Import typing.Any for type annotations
-    from typing import Any
-
     # Use Any for type annotations
     OpenAI = Any  # type: ignore[misc, assignment]
     AsyncOpenAI = Any  # type: ignore[misc, assignment]
     CreateEmbeddingResponse = Any  # type: ignore[misc, assignment]
     Embedding = Any  # type: ignore[misc, assignment]
-
-from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
 
 
 class OpenAIEmbeddingProvider(BaseEmbeddingProvider):

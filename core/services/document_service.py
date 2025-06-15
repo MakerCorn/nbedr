@@ -14,6 +14,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, Type, TypeVar, Union, cast
 
+from ..config import EmbeddingConfig
+from ..models import ChunkingStrategy, DocType, DocumentChunk, EmbeddingBatch, EmbeddingStats, ProcessingResult
+from ..utils.document_coordinator import DocumentCoordinator
+from ..utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator
+
 # Type variables for generic types
 T = TypeVar("T")
 
@@ -61,11 +66,6 @@ except ImportError:
         """Fallback implementation when tqdm is not available."""
         return iterable
 
-
-from ..config import EmbeddingConfig
-from ..models import ChunkingStrategy, DocType, DocumentChunk, EmbeddingBatch, EmbeddingStats, ProcessingResult
-from ..utils.document_coordinator import DocumentCoordinator
-from ..utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator
 
 logger = logging.getLogger(__name__)
 

@@ -6,6 +6,8 @@ import logging
 from os import environ
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
+from ..utils.env_config import read_env_config, set_env
+
 OpenAIClientType = TypeVar("OpenAIClientType")
 
 try:
@@ -15,8 +17,6 @@ except ImportError:
     OpenAI = None  # type: ignore
     AsyncAzureOpenAI = None  # type: ignore
     AsyncOpenAI = None  # type: ignore
-
-from ..utils.env_config import read_env_config, set_env
 
 logger = logging.getLogger(__name__)
 
