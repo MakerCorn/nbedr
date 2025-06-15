@@ -35,12 +35,12 @@ class TestDocumentServiceIntegration:
     def embedding_config(self):
         """Create embedding configuration for testing."""
         return EmbeddingConfig(
-            provider="openai",
-            api_key="test-key-12345",
-            model="text-embedding-3-small",
-            dimensions=1536,
-            batch_size=10,
-            max_workers=2,
+            embedding_provider="openai",
+            openai_api_key="test-key-12345",
+            embedding_model="text-embedding-3-small",
+            embedding_dimensions=1536,
+            batch_size_embeddings=10,
+            workers=2,
             rate_limit_enabled=False,
         )
 

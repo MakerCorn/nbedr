@@ -90,12 +90,12 @@ def clean_environment(monkeypatch):
 def mock_embedding_config():
     """Create a mock embedding configuration for testing."""
     return EmbeddingConfig(
-        provider="openai",
-        model="text-embedding-3-small",
-        dimensions=1536,
-        api_key="test-key-12345",
-        batch_size=10,
-        max_workers=2,
+        embedding_provider="openai",
+        embedding_model="text-embedding-3-small",
+        embedding_dimensions=1536,
+        openai_api_key="test-key-12345",
+        batch_size_embeddings=10,
+        workers=2,
         rate_limit_enabled=False,
     )
 
