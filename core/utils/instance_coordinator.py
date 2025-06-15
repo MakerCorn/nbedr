@@ -250,7 +250,8 @@ class InstanceCoordinator:
 
         try:
             with open(self.registry_file, "r") as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if isinstance(data, dict) else {}
         except (json.JSONDecodeError, IOError) as e:
             logger.warning(f"Failed to load registry, starting with empty: {e}")
             return {}
@@ -329,7 +330,8 @@ class SharedRateLimiter:
 
         try:
             with open(self.state_file, "r") as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if isinstance(data, dict) else {}
         except (json.JSONDecodeError, IOError):
             return {}
 

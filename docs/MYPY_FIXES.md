@@ -53,6 +53,33 @@ except ImportError:
     AsyncOpenAI = _MockAsyncOpenAI  # type: ignore
 ```
 
+### 3. JSON Loading Return Type Issues (`core/utils/instance_coordinator.py`)
+
+**Problem**: `json.load()` returns `Any` type, but functions were declared to return `Dict[str, Any]`.
+
+**Original Errors**:
+```
+core/utils/instance_coordinator.py:253: error: Returning Any from function declared to return "dict[str, Any]" [no-any-return]
+core/utils/instance_coordinator.py:332: error: Returning Any from function declared to return "dict[str, Any]" [no-any-return]
+```
+
+**Solution**: Added type validation and safe casting:
+
+#### Before (Problematic):
+```python
+def _load_registry(self) -> Dict[str, Any]:
+    with open(self.registry_file, "r") as f:
+        return json.load(f)  # Returns Any
+```
+
+#### After (Fixed):
+```python
+def _load_registry(self) -> Dict[str, Any]:
+    with open(self.registry_file, "r") as f:
+        data = json.load(f)
+        return data if isinstance(data, dict) else {}
+```
+
 ## Files Modified
 
 ### 1. `core/config.py`
@@ -79,6 +106,11 @@ except ImportError:
 ### 6. `core/services/document_service.py`
 - Replaced `None` assignments with mock classes
 - Created `_MockPresentation`, `_MockSemanticChunker`, `_MockOpenAIEmbeddings`, `_MockAzureOpenAIEmbeddings`
+
+### 7. `core/utils/instance_coordinator.py`
+- Fixed JSON loading return types in `_load_registry()` and `_load_shared_state()`
+- Added type validation to ensure returned data is a dictionary
+- Provides safe fallback to empty dict for invalid data
 
 ## MyPy Configuration Updates
 
@@ -108,16 +140,19 @@ Updated standalone configuration file with:
 ### 1. Type Safety
 - Mock classes provide better type safety than `Any` or `None`
 - Maintains proper type checking when imports are available
+- JSON loading validates data types at runtime
 - Allows for future extension of mock functionality
 
 ### 2. Runtime Safety
 - Mock classes can be instantiated without errors
+- JSON loading handles malformed data gracefully
 - Provides clear indication when optional dependencies are missing
 - Maintains consistent API surface
 
 ### 3. Development Experience
 - Clear error messages when optional dependencies are missing
 - Consistent behavior across different environments
+- Safe handling of corrupted configuration files
 - Easy to extend with additional mock functionality
 
 ### 4. CI/CD Compatibility
@@ -171,6 +206,16 @@ disable_error_code = ["misc", "assignment"]
 
 3. **Test thoroughly** with and without the optional dependency installed.
 
+### JSON Loading Best Practices
+When loading JSON data that should be a specific type:
+
+```python
+def load_config(self) -> Dict[str, Any]:
+    with open(config_file, "r") as f:
+        data = json.load(f)
+        return data if isinstance(data, dict) else {}
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -186,5 +231,10 @@ disable_error_code = ["misc", "assignment"]
 3. **Type checking inconsistencies**:
    - Verify mypy configuration is consistent across environments
    - Check that both `pyproject.toml` and `mypy.ini` are updated
+
+4. **JSON loading type errors**:
+   - Always validate JSON data types after loading
+   - Provide safe fallbacks for unexpected data structures
+   - Use isinstance() checks for type validation
 
 This approach provides a robust, maintainable solution for handling optional dependencies while maintaining strict type checking standards.
