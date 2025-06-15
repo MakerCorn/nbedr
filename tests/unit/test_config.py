@@ -31,23 +31,23 @@ class TestEmbeddingConfig:
     def test_config_with_custom_values(self):
         """Test creating a config with custom values."""
         config = EmbeddingConfig(
-            provider="azure_openai",
-            model="text-embedding-3-large",
-            dimensions=3072,
-            api_key="custom-key",
-            batch_size=50,
-            max_workers=4,
+            embedding_provider="azure_openai",
+            embedding_model="text-embedding-3-large",
+            embedding_dimensions=3072,
+            openai_api_key="custom-key",
+            batch_size_embeddings=50,
+            workers=4,
             rate_limit_enabled=True,
             chunk_size=1024,
             chunking_strategy="fixed",
         )
 
-        assert config.provider == "azure_openai"
-        assert config.model == "text-embedding-3-large"
-        assert config.dimensions == 3072
-        assert config.api_key == "custom-key"
-        assert config.batch_size == 50
-        assert config.max_workers == 4
+        assert config.embedding_provider == "azure_openai"
+        assert config.embedding_model == "text-embedding-3-large"
+        assert config.embedding_dimensions == 3072
+        assert config.openai_api_key == "custom-key"
+        assert config.batch_size_embeddings == 50
+        assert config.workers == 4
         assert config.rate_limit_enabled is True
         assert config.chunk_size == 1024
         assert config.chunking_strategy == "fixed"

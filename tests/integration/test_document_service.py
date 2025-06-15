@@ -12,7 +12,7 @@ from core.clients import BaseEmbeddingProvider, EmbeddingResult, create_provider
 from core.config import EmbeddingConfig, get_config
 from core.models import DocumentChunk, VectorDatabaseConfig, VectorDatabaseType
 from core.services.document_service import DocumentService
-from core.sources.local import LocalDocumentSource
+from core.sources.local import LocalInputSource
 
 
 class TestDocumentServiceIntegration:
@@ -91,7 +91,7 @@ class TestDocumentServiceIntegration:
     async def test_process_local_documents(self, document_service, temp_docs_dir):
         """Test processing documents from local directory."""
         # Create local document source
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
 
         # Process documents
         result = await document_service.process_documents_from_source(source)
@@ -109,7 +109,7 @@ class TestDocumentServiceIntegration:
     @pytest.mark.asyncio
     async def test_chunking_strategies(self, document_service, temp_docs_dir):
         """Test different chunking strategies."""
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
 
         # Test with different chunk sizes
         for chunk_size in [256, 512, 1024]:
@@ -130,7 +130,7 @@ class TestDocumentServiceIntegration:
         for i in range(10):
             (temp_docs_dir / f"batch_test_{i}.txt").write_text(f"This is batch test document number {i}.")
 
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
 
         # Set small batch size to test batching
         document_service.config.batch_size = 3
@@ -152,7 +152,7 @@ class TestDocumentServiceIntegration:
             service = DocumentService(embedding_config, vector_db_config)
 
             # Create source with non-existent directory
-            source = LocalDocumentSource("/non/existent/path")
+            source = LocalInputSource("/non/existent/path")
 
             # Should handle errors gracefully
             with pytest.raises(Exception):
@@ -165,7 +165,7 @@ class TestDocumentServiceIntegration:
         test_file = temp_docs_dir / "metadata_test.txt"
         test_file.write_text("This document should preserve metadata.")
 
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
         result = await document_service.process_documents_from_source(source)
 
         # Find chunks from our test file
@@ -187,7 +187,7 @@ class TestDocumentServiceIntegration:
         (temp_docs_dir / "test.py").write_text("# Python code")
         (temp_docs_dir / "test.log").write_text("Log file content")
 
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
         result = await document_service.process_documents_from_source(source)
 
         # Check that appropriate files were processed
@@ -209,7 +209,7 @@ class TestDocumentServiceIntegration:
                 f"This is concurrent test document {i} with unique content for testing."
             )
 
-        source = LocalDocumentSource(str(temp_docs_dir))
+        source = LocalInputSource(str(temp_docs_dir))
 
         # Enable concurrent processing
         document_service.config.max_workers = 4

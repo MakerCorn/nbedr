@@ -2,7 +2,7 @@
 Unit tests for embedding client functionality.
 """
 
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 
 import pytest
 
@@ -160,13 +160,20 @@ class TestOpenAIEmbeddingProvider:
         assert openai_provider.model_name == "text-embedding-3-small"
         assert openai_provider.get_max_batch_size() == 2048
 
+    @patch("core.clients.openai_embedding_provider.AsyncOpenAI")
     @patch("core.clients.openai_embedding_provider.OpenAI")
     @pytest.mark.asyncio
-    async def test_generate_embeddings_success(self, mock_openai_class, openai_provider):
+    async def test_generate_embeddings_success(self, mock_openai_class, mock_async_openai_class, openai_provider):
         """Test successful embedding generation."""
-        # Setup mock
+        # Setup mocks
         mock_client = Mock()
+        mock_async_client = AsyncMock()
         mock_openai_class.return_value = mock_client
+        mock_async_openai_class.return_value = mock_async_client
+
+        # Override the provider's clients with our mocks
+        openai_provider.client = mock_client
+        openai_provider.async_client = mock_async_client
 
         mock_response = Mock()
         mock_response.data = [
@@ -174,7 +181,7 @@ class TestOpenAIEmbeddingProvider:
             Mock(embedding=[0.2] * 1536),
         ]
         mock_response.usage = Mock(prompt_tokens=20, total_tokens=20)
-        mock_client.embeddings.create.return_value = mock_response
+        mock_async_client.embeddings.create.return_value = mock_response
 
         # Test
         texts = ["test text 1", "test text 2"]
@@ -185,16 +192,22 @@ class TestOpenAIEmbeddingProvider:
         assert len(result.embeddings) == 2
         assert len(result.embeddings[0]) == 1536
         assert result.model == "text-embedding-3-small"
-        assert result.usage["prompt_tokens"] == 20
+        assert result.usage_stats["provider"] == "openai"
+        assert result.token_count == 20
 
+    @patch("core.clients.openai_embedding_provider.AsyncOpenAI")
     @patch("core.clients.openai_embedding_provider.OpenAI")
     @pytest.mark.asyncio
-    async def test_generate_embeddings_fallback(self, mock_openai_class, openai_provider):
+    async def test_generate_embeddings_fallback(self, mock_openai_class, mock_async_openai_class, openai_provider):
         """Test fallback to mock embeddings when API fails."""
-        # Setup mock to raise exception
+        # Setup mocks to raise exception
         mock_client = Mock()
+        mock_async_client = AsyncMock()
         mock_openai_class.return_value = mock_client
-        mock_client.embeddings.create.side_effect = Exception("API Error")
+        mock_async_openai_class.return_value = mock_async_client
+        openai_provider.client = mock_client
+        openai_provider.async_client = mock_async_client
+        mock_async_client.embeddings.create.side_effect = Exception("API Error")
 
         # Test
         texts = ["test text 1", "test text 2"]
@@ -206,13 +219,14 @@ class TestOpenAIEmbeddingProvider:
         assert len(result.embeddings[0]) == 1536
         assert result.model == "text-embedding-3-small"
 
-    def test_get_model_info(self, openai_provider):
+    @pytest.mark.asyncio
+    async def test_get_model_info(self, openai_provider):
         """Test getting model information."""
-        info = openai_provider.get_model_info()
+        info = await openai_provider.get_model_info("text-embedding-3-small")
 
-        assert info.name == "text-embedding-3-small"
+        assert info.model_name == "text-embedding-3-small"
         assert info.dimensions == 1536
-        assert info.max_tokens == 8191
+        assert info.max_input_tokens == 8192
         assert info.provider == "openai"
 
 
@@ -222,22 +236,30 @@ class TestEmbeddingClient:
     @pytest.fixture
     def embedding_client(self, mock_openai_client):
         """Create embedding client for testing."""
-        with patch("core.clients.openai_client.build_openai_client", return_value=mock_openai_client):
-            return EmbeddingClient()
+        client = EmbeddingClient(api_key="test-key")
+        client.client = mock_openai_client
+        return client
 
     def test_client_initialization(self, embedding_client):
         """Test client initialization."""
         assert embedding_client is not None
         assert hasattr(embedding_client, "client")
 
-    @pytest.mark.asyncio
-    async def test_generate_embeddings(self, embedding_client, mock_openai_client):
+    def test_generate_embeddings(self, embedding_client, mock_openai_client):
         """Test embedding generation with legacy client."""
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.data = [
+            Mock(embedding=[0.1] * 1536),
+            Mock(embedding=[0.2] * 1536),
+        ]
+        mock_openai_client.embeddings.create.return_value = mock_response
+
         # Setup
         texts = ["test text 1", "test text 2"]
 
         # Test
-        embeddings = await embedding_client.generate_embeddings(texts)
+        embeddings = embedding_client.generate_embeddings(texts)
 
         # Assertions
         assert len(embeddings) == 2
@@ -256,7 +278,7 @@ class TestEmbeddingClient:
 class TestBuildLangChainEmbeddings:
     """Test cases for LangChain embeddings builder."""
 
-    @patch("core.clients.openai_client.OpenAIEmbeddings")
+    @patch("langchain_openai.OpenAIEmbeddings")
     @patch("core.clients.openai_client.is_azure")
     def test_build_openai_embeddings(self, mock_is_azure, mock_openai_embeddings):
         """Test building OpenAI embeddings for LangChain."""
@@ -269,7 +291,7 @@ class TestBuildLangChainEmbeddings:
         assert result == mock_embeddings
         mock_openai_embeddings.assert_called_once()
 
-    @patch("core.clients.openai_client.AzureOpenAIEmbeddings")
+    @patch("langchain_openai.AzureOpenAIEmbeddings")
     @patch("core.clients.openai_client.is_azure")
     def test_build_azure_embeddings(self, mock_is_azure, mock_azure_embeddings):
         """Test building Azure OpenAI embeddings for LangChain."""
@@ -306,10 +328,10 @@ class TestProviderIntegration:
         """Test complete provider workflow."""
         # Create config
         config = EmbeddingConfig(
-            provider="openai",
-            api_key="test-key",
-            model="text-embedding-3-small",
-            dimensions=1536,
+            embedding_provider="openai",
+            openai_api_key="test-key",
+            embedding_model="text-embedding-3-small",
+            embedding_dimensions=1536,
         )
 
         # Create provider
@@ -318,22 +340,21 @@ class TestProviderIntegration:
         # Test basic properties
         assert provider.provider_name == "openai"
         assert provider.model_name == "text-embedding-3-small"
-        assert provider.dimensions == 1536
 
         # Test model info
-        info = provider.get_model_info()
-        assert info.name == "text-embedding-3-small"
+        info = await provider.get_model_info("text-embedding-3-small")
+        assert info.model_name == "text-embedding-3-small"
         assert info.provider == "openai"
 
     def test_provider_error_handling(self):
         """Test provider error handling."""
         # Test invalid provider
         with pytest.raises(ValueError):
-            EmbeddingProviderFactory.create_provider("invalid_provider")
+            EmbeddingProviderFactory.create_provider("invalid_provider", {})
 
         # Test missing required parameters
         with pytest.raises((ValueError, TypeError)):
-            OpenAIEmbeddingProvider()  # Missing required api_key
+            OpenAIEmbeddingProvider({})  # Missing required api_key
 
 
 class TestMockProviders:

@@ -115,7 +115,8 @@ def mock_embedding_provider():
         return EmbeddingResult(
             embeddings=embeddings,
             model="mock-model",
-            usage={"prompt_tokens": len(texts) * 10, "total_tokens": len(texts) * 10},
+            dimensions=1536,
+            usage_stats={"prompt_tokens": len(texts) * 10, "total_tokens": len(texts) * 10},
         )
 
     provider.generate_embeddings = mock_generate_embeddings
