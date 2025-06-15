@@ -5,7 +5,7 @@ Amazon S3 input source implementation.
 import asyncio
 import re
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 try:
@@ -36,7 +36,7 @@ class S3InputSource(BaseInputSource):
         self.s3_client = None
         self._setup_s3_client()
 
-    def _parse_s3_uri(self, uri: str) -> tuple[str, str]:
+    def _parse_s3_uri(self, uri: str) -> Tuple[str, str]:
         """Parse S3 URI into bucket and prefix."""
         # Support formats: s3://bucket/prefix, s3://bucket, bucket/prefix, bucket
         if uri.startswith("s3://"):

@@ -6,7 +6,7 @@ import asyncio
 import json
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 try:
@@ -53,7 +53,7 @@ class SharePointInputSource(BaseInputSource):
         self.site_id = None
         self.library_id = None
 
-    def _parse_sharepoint_uri(self, uri: str) -> tuple[str, str]:
+    def _parse_sharepoint_uri(self, uri: str) -> Tuple[str, str]:
         """Parse SharePoint URI into site URL and library path."""
         # Expected format: https://tenant.sharepoint.com/sites/sitename/Shared Documents/folder
         # or: https://tenant.sharepoint.com/sites/sitename/Documents

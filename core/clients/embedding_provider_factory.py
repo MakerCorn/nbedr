@@ -3,7 +3,7 @@ Embedding provider factory for creating provider instances.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from .aws_bedrock_embedding_provider import AWSBedrockEmbeddingProvider
 from .azure_openai_embedding_provider import AzureOpenAIEmbeddingProvider
@@ -171,7 +171,7 @@ class EmbeddingProviderFactory:
         return base_config
 
     @classmethod
-    def list_providers(cls) -> list[str]:
+    def list_providers(cls) -> List[str]:
         """Get list of available provider names.
 
         Returns:

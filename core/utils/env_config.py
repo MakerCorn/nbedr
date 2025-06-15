@@ -65,7 +65,7 @@ def set_env(**environ: str):
     Warning, this is not thread safe as the environment is updated for the whole process.
 
     Args:
-        environ (dict[str, str]): Environment variables to set.
+        environ (Dict[str, str]): Environment variables to set.
 
     Yields:
         None

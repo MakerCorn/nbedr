@@ -2,7 +2,7 @@
 Factory for creating input source instances.
 """
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from .base import BaseInputSource, InputSourceConfig, SourceValidationError
 from .local import LocalInputSource
@@ -116,7 +116,7 @@ class InputSourceFactory:
         cls._source_types[name.lower()] = source_class
 
     @classmethod
-    def get_supported_types(cls) -> list[str]:
+    def get_supported_types(cls) -> List[str]:
         """Get list of supported source types."""
         return list(cls._source_types.keys())
 
