@@ -264,34 +264,35 @@ class TestEmbeddingBatch:
         assert batch.status == "pending"
         assert isinstance(batch.created_at, datetime)
 
-    def test_mark_completed(self, sample_embedding_batch):
+    def test_mark_completed(self, embedding_batch):
         """Test EmbeddingBatch.mark_completed method."""
         start_time = datetime.now()
-        sample_embedding_batch.mark_completed()
+        embedding_batch.mark_completed()
 
-        assert sample_embedding_batch.status == "completed"
-        assert sample_embedding_batch.processed_at is not None
-        assert sample_embedding_batch.processed_at >= start_time
-        assert sample_embedding_batch.error is None
+        assert embedding_batch.status == "completed"
+        assert embedding_batch.processed_at is not None
+        assert embedding_batch.processed_at >= start_time
+        assert embedding_batch.error is None
 
-    def test_mark_failed(self, sample_embedding_batch):
+    def test_mark_failed(self, embedding_batch):
         """Test EmbeddingBatch.mark_failed method."""
         error_msg = "Test error message"
         start_time = datetime.now()
 
-        sample_embedding_batch.mark_failed(error_msg)
+        embedding_batch.mark_failed(error_msg)
 
-        assert sample_embedding_batch.status == "failed"
-        assert sample_embedding_batch.processed_at is not None
-        assert sample_embedding_batch.processed_at >= start_time
-        assert sample_embedding_batch.error == error_msg
+        assert embedding_batch.status == "failed"
+        assert embedding_batch.processed_at is not None
+        assert embedding_batch.processed_at >= start_time
+        assert embedding_batch.error == error_msg
 
 
 class TestVectorSearchResult:
     """Test cases for the VectorSearchResult class."""
 
-    def test_basic_creation(self, sample_document_chunk):
+    def test_basic_creation(self, sample_document_chunks):
         """Test basic VectorSearchResult creation."""
+        sample_document_chunk = sample_document_chunks[0]
         result = VectorSearchResult(
             id="test-id",
             content="Test content",
@@ -308,8 +309,9 @@ class TestVectorSearchResult:
         assert result.score == 0.85
         assert result.rank == 1
 
-    def test_to_dict(self, sample_document_chunk):
+    def test_to_dict(self, sample_document_chunks):
         """Test VectorSearchResult.to_dict serialization."""
+        sample_document_chunk = sample_document_chunks[0]
         result = VectorSearchResult(
             id="test-id",
             content="Test content",
@@ -386,8 +388,9 @@ class TestVectorDatabaseConfig:
 class TestProcessingJob:
     """Test cases for the ProcessingJob class."""
 
-    def test_basic_creation(self, sample_document_chunk):
+    def test_basic_creation(self, sample_document_chunks):
         """Test basic ProcessingJob creation."""
+        sample_document_chunk = sample_document_chunks[0]
         job = ProcessingJob(id="job-123", chunk=sample_document_chunk, embedding_model="text-embedding-3-small")
 
         assert job.id == "job-123"
@@ -397,8 +400,9 @@ class TestProcessingJob:
         assert isinstance(job.created_at, datetime)
         assert job.processed_at is None
 
-    def test_create_class_method(self, sample_document_chunk):
+    def test_create_class_method(self, sample_document_chunks):
         """Test ProcessingJob.create class method."""
+        sample_document_chunk = sample_document_chunks[0]
         job = ProcessingJob.create(sample_document_chunk, "test-model")
 
         assert len(job.id) > 0  # Should have generated UUID
@@ -664,8 +668,9 @@ class TestModelIntegration:
             assert chunk.has_embedding()
             assert chunk.embedding_model == "text-embedding-3-small"
 
-    def test_processing_job_to_result_workflow(self, sample_document_chunk):
+    def test_processing_job_to_result_workflow(self, sample_document_chunks):
         """Test workflow from processing job to result."""
+        sample_document_chunk = sample_document_chunks[0]
         # Create processing job
         job = ProcessingJob.create(sample_document_chunk, "text-embedding-3-small")
 

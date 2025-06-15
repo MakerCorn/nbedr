@@ -212,11 +212,10 @@ def embedding_batch(sample_document_chunks, sample_embeddings):
         chunk.embedding = embedding
 
     return EmbeddingBatch(
+        id="test-batch-123",
         chunks=sample_document_chunks,
         model="text-embedding-3-small",
-        provider="openai",
         created_at=datetime.now(),
-        metadata={"batch_size": len(sample_document_chunks)},
     )
 
 
