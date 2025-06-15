@@ -12,7 +12,8 @@ class TestSourcesModule:
         """Test that sources module can be imported."""
         try:
             import core.sources
-            assert hasattr(core.sources, '__name__')
+
+            assert hasattr(core.sources, "__name__")
         except ImportError:
             pytest.fail("Failed to import core.sources")
 
@@ -20,7 +21,8 @@ class TestSourcesModule:
         """Test that factory module can be imported."""
         try:
             import core.sources.factory
-            assert hasattr(core.sources.factory, '__name__')
+
+            assert hasattr(core.sources.factory, "__name__")
         except ImportError:
             pytest.fail("Failed to import core.sources.factory")
 
@@ -28,7 +30,8 @@ class TestSourcesModule:
         """Test that base module can be imported."""
         try:
             import core.sources.base
-            assert hasattr(core.sources.base, '__name__')
+
+            assert hasattr(core.sources.base, "__name__")
         except ImportError:
             pytest.fail("Failed to import core.sources.base")
 
@@ -36,6 +39,7 @@ class TestSourcesModule:
         """Test that local module can be imported."""
         try:
             import core.sources.local
-            assert hasattr(core.sources.local, '__name__')
+
+            assert hasattr(core.sources.local, "__name__")
         except ImportError:
             pytest.fail("Failed to import core.sources.local")

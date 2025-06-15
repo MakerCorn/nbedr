@@ -102,7 +102,7 @@ class TestRateLimiter:
         # First request should not be delayed
         delay = limiter.acquire()
         assert delay == 0.0
-        
+
         # Verify limiter is working
         stats = limiter.get_statistics()
         assert stats["enabled"] is True
@@ -130,10 +130,10 @@ class TestRateLimiter:
         # Small token request should not be delayed
         delay = limiter.acquire(estimated_tokens=100)
         assert delay == 0.0
-        
+
         # Record the token usage
         limiter.record_response(1.0, actual_tokens=100)
-        
+
         stats = limiter.get_statistics()
         assert stats["total_tokens"] == 100
 
@@ -175,9 +175,7 @@ class TestRateLimiter:
 
     def test_burst_request_tracking(self):
         """Test basic burst request tracking functionality."""
-        config = RateLimitConfig(
-            enabled=True, max_burst_requests=2, burst_window_seconds=5.0
-        )
+        config = RateLimitConfig(enabled=True, max_burst_requests=2, burst_window_seconds=5.0)
         limiter = RateLimiter(config)
 
         # First request should be allowed
@@ -247,10 +245,10 @@ class TestRateLimiter:
         # Basic acquisition should work
         delay = limiter.acquire()
         assert delay >= 0.0
-        
+
         # Record a response
         limiter.record_response(1.5)
-        
+
         # Check statistics
         stats = limiter.get_statistics()
         assert stats["total_requests"] == 1
@@ -277,7 +275,7 @@ class TestRateLimiterHelpers:
     def test_create_rate_limiter_disabled(self):
         """Test creating disabled rate limiter."""
         limiter = create_rate_limiter_from_config(enabled=False)
-        
+
         assert isinstance(limiter, RateLimiter)
         assert limiter.config.enabled is False
 
@@ -287,7 +285,7 @@ class TestRateLimiterHelpers:
 
         assert isinstance(common_limits, dict)
         assert len(common_limits) > 0
-        
+
         # Verify structure of returned configurations
         for name, config in common_limits.items():
             assert isinstance(name, str)
@@ -508,6 +506,7 @@ class TestEnvConfig:
         # Test that the function exists (even if it's a no-op fallback)
         try:
             from core.utils.env_config import load_env_file
+
             # Just check it's callable, don't actually call it
             assert callable(load_env_file)
         except ImportError:
