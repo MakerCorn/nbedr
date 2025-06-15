@@ -87,6 +87,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         self.base_url = config.get("base_url")
         self.timeout = config.get("timeout", 60)
         self.max_retries = config.get("max_retries", 3)
+        self.model_name = config.get("model", config.get("default_model", "text-embedding-3-small"))
 
         # Initialize clients
         client_kwargs = {

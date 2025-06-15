@@ -64,11 +64,30 @@ def build_openai_client(env_prefix: str = "EMBEDDING", **kwargs: Any) -> OpenAI:
         OpenAI: The configured OpenAI or AzureOpenAI client instance.
     """
     env = read_env_config(env_prefix)
+
+    # Extract OpenAI-specific parameters from environment
+    client_kwargs = {}
+    if "OPENAI_API_KEY" in env:
+        client_kwargs["api_key"] = env["OPENAI_API_KEY"]
+    if "OPENAI_ORGANIZATION" in env:
+        client_kwargs["organization"] = env["OPENAI_ORGANIZATION"]
+
+    # Extract Azure-specific parameters
+    if "AZURE_OPENAI_API_KEY" in env:
+        client_kwargs["api_key"] = env["AZURE_OPENAI_API_KEY"]
+    if "AZURE_OPENAI_ENDPOINT" in env:
+        client_kwargs["azure_endpoint"] = env["AZURE_OPENAI_ENDPOINT"]
+    if "AZURE_OPENAI_API_VERSION" in env:
+        client_kwargs["api_version"] = env["AZURE_OPENAI_API_VERSION"]
+
+    # Merge with provided kwargs (kwargs take precedence)
+    client_kwargs.update(kwargs)
+
     with set_env(**env):
         if is_azure():
-            return AzureOpenAI(**kwargs)
+            return AzureOpenAI(**client_kwargs)
         else:
-            return OpenAI(**kwargs)
+            return OpenAI(**client_kwargs)
 
 
 def build_langchain_embeddings(**kwargs):

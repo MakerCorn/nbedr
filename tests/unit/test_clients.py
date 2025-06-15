@@ -110,13 +110,12 @@ class TestEmbeddingProviderFactory:
     def test_create_openai_provider(self):
         """Test creating OpenAI provider."""
         config = {
-            "provider": "openai",
             "api_key": "test-key",
             "model": "text-embedding-3-small",
             "dimensions": 1536,
         }
 
-        provider = EmbeddingProviderFactory.create_provider("openai", **config)
+        provider = EmbeddingProviderFactory.create_provider("openai", config)
 
         assert isinstance(provider, OpenAIEmbeddingProvider)
         assert provider.provider_name == "openai"
@@ -125,10 +124,10 @@ class TestEmbeddingProviderFactory:
     def test_create_provider_from_config(self):
         """Test creating provider from EmbeddingConfig."""
         config = EmbeddingConfig(
-            provider="openai",
-            api_key="test-key",
-            model="text-embedding-3-small",
-            dimensions=1536,
+            embedding_provider="openai",
+            openai_api_key="test-key",
+            embedding_model="text-embedding-3-small",
+            embedding_dimensions=1536,
         )
 
         provider = create_provider_from_config(config)
@@ -138,8 +137,8 @@ class TestEmbeddingProviderFactory:
 
     def test_unsupported_provider(self):
         """Test error handling for unsupported provider."""
-        with pytest.raises(ValueError, match="Unsupported embedding provider"):
-            EmbeddingProviderFactory.create_provider("unsupported_provider")
+        with pytest.raises(ValueError, match="Unknown provider type"):
+            EmbeddingProviderFactory.create_provider("unsupported_provider", {})
 
 
 class TestOpenAIEmbeddingProvider:
