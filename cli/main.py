@@ -11,6 +11,13 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# Check Python version early
+if sys.version_info < (3, 11):
+    print("❌ Error: nBedR requires Python 3.11 or higher.")
+    print(f"Current version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+    print("Please upgrade your Python installation.")
+    sys.exit(1)
+
 from core.config import EmbeddingConfig, get_config
 from core.models import DocumentChunk
 from core.services.document_service import DocumentService

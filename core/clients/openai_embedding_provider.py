@@ -21,11 +21,11 @@ try:
 except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     OPENAI_AVAILABLE = False
-    # Use Any for type annotations
-    OpenAI = Any
-    AsyncOpenAI = Any
-    CreateEmbeddingResponse = Any
-    Embedding = Any
+    # Use cast to handle type assignments when imports fail
+    OpenAI = cast(Type[Any], Any)
+    AsyncOpenAI = cast(Type[Any], Any)
+    CreateEmbeddingResponse = cast(Type[Any], Any)
+    Embedding = cast(Type[Any], Any)
 
 
 class OpenAIEmbeddingProvider(BaseEmbeddingProvider):

@@ -11,9 +11,9 @@ try:
     credential = DefaultAzureCredential()
     AZURE_AVAILABLE = True
 except ImportError:
-    DefaultAzureCredential = None
+    DefaultAzureCredential = cast(Type[Any], None)
     CredentialUnavailableError = Exception
-    credential = None
+    credential = cast(Any, None)
     AZURE_AVAILABLE = False
 
 log = logging.getLogger(__name__)

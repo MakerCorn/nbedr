@@ -122,6 +122,9 @@ graph TD
 ### Installation
 
 ```bash
+# Ensure you're using Python 3.11 or higher
+python3.11 --version  # Should show 3.11.x or higher
+
 # Install from PyPI
 pip install nbedr
 
@@ -1727,6 +1730,27 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 - Have existing PostgreSQL expertise in your team
 
 ## Development
+
+### Prerequisites
+
+nBedR requires **Python 3.11 or higher**. For detailed development setup instructions, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+**Note**: The project includes a `.python-version` file that specifies Python 3.11 as the default. Tools like `pyenv` will automatically use this version.
+
+### Quick Setup
+
+```bash
+# Check Python version
+python3.11 --version
+
+# Automated setup
+./scripts/setup_dev.sh
+
+# Or manual setup
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -e .[dev,all]
+```
 
 ### Running Tests
 

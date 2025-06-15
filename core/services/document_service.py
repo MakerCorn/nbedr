@@ -35,7 +35,7 @@ try:
 
     PresentationCallable = Type[Callable[[Union[str, IO[bytes], None]], Any]]
 except ImportError:
-    Presentation = None
+    Presentation = cast(Any, None)
     PresentationCallable = Type[Any]  # type: ignore[misc]
 
 try:
@@ -46,9 +46,9 @@ try:
     OpenAIEmbeddingsType = Type[OpenAIEmbeddings]
     AzureOpenAIEmbeddingsType = Type[AzureOpenAIEmbeddings]
 except ImportError:
-    SemanticChunker = None
-    OpenAIEmbeddings = None
-    AzureOpenAIEmbeddings = None
+    SemanticChunker = cast(Any, None)
+    OpenAIEmbeddings = cast(Type[Any], None)
+    AzureOpenAIEmbeddings = cast(Type[Any], None)
     SemanticChunkerType = Type[Any]  # type: ignore[misc]
     OpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]
     AzureOpenAIEmbeddingsType = Type[Any]  # type: ignore[misc]

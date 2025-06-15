@@ -7,6 +7,13 @@ import os
 import sys
 from pathlib import Path
 
+# Check Python version before proceeding
+if sys.version_info < (3, 11):
+    print("❌ Error: nBedR requires Python 3.11 or higher.")
+    print(f"Current version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+    print("Please upgrade your Python installation.")
+    sys.exit(1)
+
 # Add the current directory to Python path
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
