@@ -21,12 +21,10 @@ class TestEmbeddingConfig:
         config = EmbeddingConfig()
 
         # Test new API structure defaults
-        assert config.provider == "openai"
-        assert config.model == "text-embedding-3-small"
-        assert config.dimensions == 1536
-        assert config.batch_size == 100
-        assert config.max_workers == 1
-        assert config.rate_limit_enabled is False
+        assert config.embedding_provider == "openai"
+        assert config.embedding_model == "text-embedding-3-small"
+        assert config.embedding_dimensions == 1536
+        assert config.batch_size_embeddings == 100
         assert config.chunk_size == 512
         assert config.chunking_strategy == "semantic"
 

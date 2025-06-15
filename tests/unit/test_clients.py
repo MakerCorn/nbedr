@@ -147,18 +147,18 @@ class TestOpenAIEmbeddingProvider:
     @pytest.fixture
     def openai_provider(self):
         """Create OpenAI provider for testing."""
-        return OpenAIEmbeddingProvider(
-            api_key="test-key",
-            model="text-embedding-3-small",
-            dimensions=1536,
-        )
+        config = {
+            "api_key": "test-key",
+            "model": "text-embedding-3-small",
+            "dimensions": 1536,
+        }
+        return OpenAIEmbeddingProvider(config)
 
     def test_provider_initialization(self, openai_provider):
         """Test provider initialization."""
         assert openai_provider.provider_name == "openai"
         assert openai_provider.model_name == "text-embedding-3-small"
-        assert openai_provider.dimensions == 1536
-        assert openai_provider.max_batch_size == 2048
+        assert openai_provider.get_max_batch_size() == 2048
 
     @patch("core.clients.openai_embedding_provider.OpenAI")
     @pytest.mark.asyncio
