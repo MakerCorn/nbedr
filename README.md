@@ -113,6 +113,12 @@ graph TD
 
 ## Quick Start
 
+### System Requirements
+
+- **Python 3.11 or higher** (Python 3.9 and 3.10 are no longer supported)
+- 4GB+ RAM recommended for large document processing
+- Sufficient disk space for vector databases (varies by collection size)
+
 ### Installation
 
 ```bash

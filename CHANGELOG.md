@@ -5,13 +5,25 @@ All notable changes to the RAG Embeddings Database project will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+
+### Changed
+
+#### Python Version Support
+- **Updated minimum Python requirement to 3.11+**: Removed support for Python 3.9 and 3.10
+  - Updated pyproject.toml to require Python >=3.11
+  - Updated GitHub Actions CI/CD to test Python 3.11, 3.12, and 3.13
+  - Updated Docker base image remains Python 3.11-slim for stability
+  - Updated documentation to reflect new Python version requirements
+  - Improved type annotations using modern Python 3.11+ syntax where applicable
+
 ## [1.7.0] - 2025-06-14
 
 ### Added
 
 #### GitHub Actions CI/CD Pipeline
 - **Comprehensive CI/CD Workflows**: Complete automation for testing, building, and releasing
-  - Multi-platform testing across Python 3.9, 3.10, and 3.11
+  - Multi-platform testing across Python 3.9, 3.10, and 3.11 (now updated to 3.11, 3.12, 3.13)
   - Automated code quality checks (Black, isort, flake8, mypy)
   - Security scanning with Bandit and Trivy vulnerability detection
   - Comprehensive test coverage reporting with Codecov integration
