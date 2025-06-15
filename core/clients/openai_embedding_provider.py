@@ -14,12 +14,14 @@ try:
     from openai import AsyncOpenAI, OpenAI
     from openai.types.create_embedding_response import CreateEmbeddingResponse
     from openai.types.embedding import Embedding
+
     OPENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     OPENAI_AVAILABLE = False
     # Import typing.Any for type annotations
     from typing import Any
+
     # Use Any for type annotations
     OpenAI = Any  # type: ignore[misc, assignment]
     AsyncOpenAI = Any  # type: ignore[misc, assignment]
@@ -102,7 +104,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 self.async_client = None
 
     async def generate_embeddings(
-        self, 
+        self,
         texts: List[str],
         model: Optional[str] = None,
         batch_size: Optional[int] = None,
@@ -128,7 +130,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 model=model,
                 dimensions=mock_dims,
                 token_count=sum(len(text.split()) for text in texts),
-                usage_stats={"provider": "openai", "mock": True}
+                usage_stats={"provider": "openai", "mock": True},
             )
 
         all_embeddings: List[List[float]] = []
@@ -172,14 +174,16 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 error_type = "rate_limit" if "rate_limit" in str(e).lower() else "server_error"
                 self._record_error(error_type)
                 logger.error(f"Failed to generate embeddings for batch {i // batch_size + 1}: {e}")
-                
+
                 # Add mock embeddings for failed batch
                 mock_dims = cast(int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536))
                 mock_batch = self._generate_mock_embeddings(batch_texts, mock_dims)
                 all_embeddings.extend(mock_batch)
 
-        dimensions_used = len(all_embeddings[0]) if all_embeddings else cast(
-            int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536)
+        dimensions_used = (
+            len(all_embeddings[0])
+            if all_embeddings
+            else cast(int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536))
         )
 
         return EmbeddingResult(
@@ -221,10 +225,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
             return False
 
         try:
-            response = await self.async_client.embeddings.create(
-                input=["test"],
-                model="text-embedding-3-small"
-            )
+            response = await self.async_client.embeddings.create(input=["test"], model="text-embedding-3-small")
             return bool(response.data)
         except Exception as e:
             logger.error(f"OpenAI health check failed: {e}")
@@ -241,10 +242,10 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
     async def _estimate_cost(self, token_count: int, model: Optional[str] = None) -> float:
         """Estimate cost for the operation."""
         effective_model = model or self.get_default_model()
-        
+
         if effective_model not in self.KNOWN_MODELS:
             return 0.0
-        
+
         cost_per_token_str = str(self.KNOWN_MODELS[effective_model]["cost_per_token"])
         cost_per_token = float(cost_per_token_str)
         return float(token_count) * cost_per_token

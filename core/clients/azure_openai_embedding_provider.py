@@ -14,12 +14,14 @@ try:
     from openai import AsyncAzureOpenAI, AzureOpenAI
     from openai.types.create_embedding_response import CreateEmbeddingResponse
     from openai.types.embedding import Embedding
+
     AZURE_OPENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenAI library not available, using mock implementation")
     AZURE_OPENAI_AVAILABLE = False
     # Import typing.Any for type annotations
     from typing import Any
+
     # Use Any for type annotations
     AzureOpenAI = Any  # type: ignore[misc, assignment]
     AsyncAzureOpenAI = Any  # type: ignore[misc, assignment]
@@ -156,7 +158,7 @@ class AzureOpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 model=f"{effective_deployment}({model})",
                 dimensions=mock_dims,
                 token_count=sum(len(text.split()) for text in texts),
-                usage_stats={"provider": "azure_openai", "mock": True}
+                usage_stats={"provider": "azure_openai", "mock": True},
             )
 
         all_embeddings: List[List[float]] = []
@@ -201,8 +203,10 @@ class AzureOpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 mock_batch = self._generate_mock_embeddings(batch_texts, mock_dims)
                 all_embeddings.extend(mock_batch)
 
-        dimensions_used = len(all_embeddings[0]) if all_embeddings else cast(
-            int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536)
+        dimensions_used = (
+            len(all_embeddings[0])
+            if all_embeddings
+            else cast(int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536))
         )
 
         return EmbeddingResult(
@@ -328,10 +332,7 @@ class AzureOpenAIEmbeddingProvider(BaseEmbeddingProvider):
         try:
             # Try a simple embedding request with default deployment
             deployment = self.deployment_name or self._get_deployment_name("text-embedding-3-small")
-            response = await self.async_client.embeddings.create(
-                input=["test"],
-                model=deployment
-            )
+            response = await self.async_client.embeddings.create(input=["test"], model=deployment)
             return bool(response.data)
         except Exception as e:
             logger.error(f"Azure OpenAI health check failed: {e}")

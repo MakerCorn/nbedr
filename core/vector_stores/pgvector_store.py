@@ -224,10 +224,7 @@ class PGVectorStore(BaseVectorStore):
             raise RuntimeError(f"Failed to add documents to pgvector: {e}")
 
     async def search(
-        self, 
-        query_embedding: List[float], 
-        top_k: int = 10, 
-        filters: Optional[Dict[str, Any]] = None
+        self, query_embedding: List[float], top_k: int = 10, filters: Optional[Dict[str, Any]] = None
     ) -> List[VectorSearchResult]:
         """Search for similar vectors in pgvector.
 
@@ -286,15 +283,19 @@ class PGVectorStore(BaseVectorStore):
 
                 search_results: List[VectorSearchResult] = []
                 for row in rows:
-                    search_results.append(VectorSearchResult(
-                        id=str(row["id"]),
-                        content=str(row["content"]),
-                        source=str(row["source"]),
-                        metadata=json.loads(row["metadata"]) if row["metadata"] else {},
-                        similarity_score=float(row["similarity_score"]),
-                        embedding_model=str(row["embedding_model"]) if row["embedding_model"] else "unknown",  # Default value when None
-                        created_at=row["created_at"].isoformat() if row["created_at"] else None,
-                    ))
+                    search_results.append(
+                        VectorSearchResult(
+                            id=str(row["id"]),
+                            content=str(row["content"]),
+                            source=str(row["source"]),
+                            metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+                            similarity_score=float(row["similarity_score"]),
+                            embedding_model=(
+                                str(row["embedding_model"]) if row["embedding_model"] else "unknown"
+                            ),  # Default value when None
+                            created_at=row["created_at"].isoformat() if row["created_at"] else None,
+                        )
+                    )
 
                 response_time = time.time() - start_time
                 self._record_operation_response(response_time, "search")

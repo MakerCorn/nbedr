@@ -184,7 +184,7 @@ class RateLimiter:
             return self._token_bucket_delay(now, estimated_tokens)
         elif self.config.strategy == RateLimitStrategy.ADAPTIVE:
             return self._adaptive_delay(now, estimated_tokens)
-        
+
         # Only reached if strategy is invalid or None
         logger.warning(f"Unknown rate limit strategy: {self.config.strategy}")
         return 0.0

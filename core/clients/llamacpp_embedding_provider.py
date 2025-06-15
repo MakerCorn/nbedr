@@ -34,7 +34,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
             "dimensions": 4096,
             "max_input_tokens": 8192,
             "cost_per_token": 0.0,
-            "description": "Default LlamaCPP model"
+            "description": "Default LlamaCPP model",
         }
     }
 
@@ -76,10 +76,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
         Returns:
             Response data
         """
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
@@ -265,7 +262,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
                 cost_per_token=cast(float, model_spec.get("cost_per_token", 0.0)),
                 supports_batch=True,
                 provider="llamacpp",
-                description=str(model_spec.get("description", f"LlamaCPP model: {model}"))
+                description=str(model_spec.get("description", f"LlamaCPP model: {model}")),
             )
             self._model_info_cache[model] = info
             return info
@@ -278,7 +275,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
             cost_per_token=0.0,
             supports_batch=True,
             provider="llamacpp",
-            description=f"LlamaCPP model: {model}"
+            description=f"LlamaCPP model: {model}",
         )
         self._model_info_cache[model] = info
         return info
@@ -298,10 +295,11 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
 
     async def _get_single_embedding(self, text: str, model: Optional[str] = None) -> FloatList:
         """Get embedding for a single text using Llama.cpp."""
+
         # Define a function to create mock embeddings to ensure consistent return type
         def create_mock_embedding() -> FloatList:
             return self._generate_mock_embeddings([text], self.expected_dimensions)[0]
-            
+
         try:
             effective_model = model or self.model_name
             response = await self._make_request(
@@ -309,9 +307,9 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
                 {
                     "content": text,
                     "model": effective_model,
-                }
+                },
             )
-            
+
             if not response or "embedding" not in response:
                 # Return mock embedding if no valid response
                 return create_mock_embedding()
@@ -320,7 +318,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
             if not isinstance(embedding_data, list):
                 # Return mock embedding if wrong type
                 return create_mock_embedding()
-                
+
             embedding: FloatList = [float(x) for x in embedding_data]
             if len(embedding) != self.expected_dimensions:
                 logger.warning(

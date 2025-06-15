@@ -6,7 +6,7 @@ import logging
 from os import environ
 from typing import Any, Dict, List, Optional, Union, Type, TypeVar, cast
 
-OpenAIClientType = TypeVar('OpenAIClientType')
+OpenAIClientType = TypeVar("OpenAIClientType")
 
 try:
     from openai import AzureOpenAI, OpenAI, AsyncAzureOpenAI, AsyncOpenAI
@@ -88,6 +88,7 @@ def build_langchain_embeddings(**kwargs):
 
 class BaseEmbeddingsClient:
     """Base class for OpenAI embeddings."""
+
     def __init__(self) -> None:
         self.client: Optional[Union[AzureOpenAI, OpenAI]] = None
 

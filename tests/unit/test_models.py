@@ -301,7 +301,7 @@ class TestVectorSearchResult:
             embedding_model="test-model",
             chunk=sample_document_chunk,
             score=0.85,
-            rank=1
+            rank=1,
         )
 
         assert result.chunk == sample_document_chunk
@@ -319,7 +319,7 @@ class TestVectorSearchResult:
             embedding_model="test-model",
             chunk=sample_document_chunk,
             score=0.85,
-            rank=1
+            rank=1,
         )
 
         serialized = result.to_dict()

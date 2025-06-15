@@ -17,7 +17,7 @@ from ..config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T', bound=BaseEmbeddingProvider)
+T = TypeVar("T", bound=BaseEmbeddingProvider)
 
 
 class EmbeddingProviderFactory:
@@ -35,9 +35,7 @@ class EmbeddingProviderFactory:
     }
 
     @classmethod
-    def create_provider(
-        cls, provider_type: str, config: Dict[str, Any]
-    ) -> BaseEmbeddingProvider:
+    def create_provider(cls, provider_type: str, config: Dict[str, Any]) -> BaseEmbeddingProvider:
         """Create an embedding provider instance.
 
         Args:
@@ -52,9 +50,7 @@ class EmbeddingProviderFactory:
         """
         if provider_type not in cls._providers:
             valid_providers = ", ".join(cls._providers.keys())
-            raise ValueError(
-                f"Unknown provider type: {provider_type}. Valid providers: {valid_providers}"
-            )
+            raise ValueError(f"Unknown provider type: {provider_type}. Valid providers: {valid_providers}")
 
         provider_class = cls._providers[provider_type]
         return provider_class(config)
@@ -101,14 +97,16 @@ class EmbeddingProviderFactory:
         if provider_name == "openai":
             if not embedding_config.openai_api_key:
                 raise ValueError("OpenAI API key is required")
-            
-            base_config.update({
-                "api_key": embedding_config.openai_api_key,
-                "organization": embedding_config.openai_organization,
-                "base_url": embedding_config.openai_base_url,
-                "timeout": embedding_config.openai_timeout,
-                "max_retries": embedding_config.openai_max_retries,
-            })
+
+            base_config.update(
+                {
+                    "api_key": embedding_config.openai_api_key,
+                    "organization": embedding_config.openai_organization,
+                    "base_url": embedding_config.openai_base_url,
+                    "timeout": embedding_config.openai_timeout,
+                    "max_retries": embedding_config.openai_max_retries,
+                }
+            )
 
         elif provider_name == "azure_openai":
             if not embedding_config.azure_openai_api_key:
@@ -116,29 +114,33 @@ class EmbeddingProviderFactory:
             if not embedding_config.azure_openai_endpoint:
                 raise ValueError("Azure OpenAI endpoint is required")
 
-            base_config.update({
-                "api_key": embedding_config.azure_openai_api_key,
-                "azure_endpoint": embedding_config.azure_openai_endpoint,
-                "api_version": embedding_config.azure_openai_api_version,
-                "deployment_name": embedding_config.azure_openai_deployment_name,
-                "deployment_mapping": embedding_config.azure_openai_deployment_mapping or {},
-                "timeout": embedding_config.azure_openai_timeout,
-                "max_retries": embedding_config.azure_openai_max_retries,
-            })
+            base_config.update(
+                {
+                    "api_key": embedding_config.azure_openai_api_key,
+                    "azure_endpoint": embedding_config.azure_openai_endpoint,
+                    "api_version": embedding_config.azure_openai_api_version,
+                    "deployment_name": embedding_config.azure_openai_deployment_name,
+                    "deployment_mapping": embedding_config.azure_openai_deployment_mapping or {},
+                    "timeout": embedding_config.azure_openai_timeout,
+                    "max_retries": embedding_config.azure_openai_max_retries,
+                }
+            )
 
         elif provider_name == "aws_bedrock":
             if not embedding_config.aws_bedrock_region:
                 raise ValueError("AWS Bedrock region is required")
 
-            base_config.update({
-                "region_name": embedding_config.aws_bedrock_region,
-                "aws_access_key_id": embedding_config.aws_bedrock_access_key_id,
-                "aws_secret_access_key": embedding_config.aws_bedrock_secret_access_key,
-                "aws_session_token": embedding_config.aws_bedrock_session_token,
-                "profile_name": embedding_config.aws_bedrock_profile_name,
-                "role_arn": embedding_config.aws_bedrock_role_arn,
-                "timeout": embedding_config.aws_bedrock_timeout,
-            })
+            base_config.update(
+                {
+                    "region_name": embedding_config.aws_bedrock_region,
+                    "aws_access_key_id": embedding_config.aws_bedrock_access_key_id,
+                    "aws_secret_access_key": embedding_config.aws_bedrock_secret_access_key,
+                    "aws_session_token": embedding_config.aws_bedrock_session_token,
+                    "profile_name": embedding_config.aws_bedrock_profile_name,
+                    "role_arn": embedding_config.aws_bedrock_role_arn,
+                    "timeout": embedding_config.aws_bedrock_timeout,
+                }
+            )
 
         elif provider_name == "google_vertex":
             if not embedding_config.google_vertex_project_id:
@@ -146,37 +148,45 @@ class EmbeddingProviderFactory:
             if not embedding_config.google_vertex_location:
                 raise ValueError("Google Vertex location is required")
 
-            base_config.update({
-                "project_id": embedding_config.google_vertex_project_id,
-                "location": embedding_config.google_vertex_location,
-                "credentials_path": embedding_config.google_vertex_credentials_path,
-                "timeout": embedding_config.google_vertex_timeout,
-            })
+            base_config.update(
+                {
+                    "project_id": embedding_config.google_vertex_project_id,
+                    "location": embedding_config.google_vertex_location,
+                    "credentials_path": embedding_config.google_vertex_credentials_path,
+                    "timeout": embedding_config.google_vertex_timeout,
+                }
+            )
 
         elif provider_name == "lmstudio":
-            base_config.update({
-                "base_url": embedding_config.lmstudio_base_url,
-                "api_key": embedding_config.lmstudio_api_key,
-                "timeout": embedding_config.lmstudio_timeout,
-                "verify_ssl": embedding_config.lmstudio_verify_ssl,
-            })
+            base_config.update(
+                {
+                    "base_url": embedding_config.lmstudio_base_url,
+                    "api_key": embedding_config.lmstudio_api_key,
+                    "timeout": embedding_config.lmstudio_timeout,
+                    "verify_ssl": embedding_config.lmstudio_verify_ssl,
+                }
+            )
 
         elif provider_name == "ollama":
-            base_config.update({
-                "base_url": embedding_config.ollama_base_url,
-                "timeout": embedding_config.ollama_timeout,
-                "verify_ssl": embedding_config.ollama_verify_ssl,
-            })
+            base_config.update(
+                {
+                    "base_url": embedding_config.ollama_base_url,
+                    "timeout": embedding_config.ollama_timeout,
+                    "verify_ssl": embedding_config.ollama_verify_ssl,
+                }
+            )
 
         elif provider_name == "llamacpp":
-            base_config.update({
-                "base_url": embedding_config.llamacpp_base_url,
-                "api_key": embedding_config.llamacpp_api_key,
-                "model_name": embedding_config.llamacpp_model_name,
-                "timeout": embedding_config.llamacpp_timeout,
-                "verify_ssl": embedding_config.llamacpp_verify_ssl,
-                "dimensions": embedding_config.llamacpp_dimensions,
-            })
+            base_config.update(
+                {
+                    "base_url": embedding_config.llamacpp_base_url,
+                    "api_key": embedding_config.llamacpp_api_key,
+                    "model_name": embedding_config.llamacpp_model_name,
+                    "timeout": embedding_config.llamacpp_timeout,
+                    "verify_ssl": embedding_config.llamacpp_verify_ssl,
+                    "dimensions": embedding_config.llamacpp_dimensions,
+                }
+            )
 
         else:
             raise ValueError(f"Unknown provider type: {provider_name}")

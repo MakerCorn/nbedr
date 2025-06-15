@@ -15,10 +15,11 @@ from typing import Any, Dict, List, Optional, Set, Type, Union, IO, Callable, Ty
 from types import ModuleType
 
 # Type variables for generic types
-T = TypeVar('T')
+T = TypeVar("T")
 
 try:
     import pypdf
+
     PypdfModule = Type[ModuleType]
 except ImportError:
     pypdf = None  # type: ignore
@@ -26,6 +27,7 @@ except ImportError:
 
 try:
     from pptx import Presentation
+
     PresentationCallable = Type[Callable[[Union[str, IO[bytes], None]], Any]]
 except ImportError:
     Presentation = None  # type: ignore
@@ -52,7 +54,9 @@ try:
     def tqdm(iterable: Iterator[T], *args: Any, **kwargs: Any) -> Iterator[T]:
         """Wrapper around tqdm to handle both CLI and notebook contexts."""
         return cast(Iterator[T], tqdm_auto(iterable, *args, **kwargs))
+
 except ImportError:
+
     def tqdm(iterable: Iterator[T], *args: Any, **kwargs: Any) -> Iterator[T]:
         """Fallback implementation when tqdm is not available."""
         return iterable
@@ -235,25 +239,25 @@ class DocumentService:
         # Use a simple progress counter instead of tqdm
         total_files = len(available_files)
         processed_files = 0
-        
+
         with ThreadPoolExecutor(max_workers=self.config.embed_workers) as executor:
-                for file_path in available_files:
-                    future = executor.submit(self._process_single_file_with_coordination, file_path)
-                    futures.append(future)
+            for file_path in available_files:
+                future = executor.submit(self._process_single_file_with_coordination, file_path)
+                futures.append(future)
 
-                    if self.config.pace:
-                        time.sleep(15)
+                if self.config.pace:
+                    time.sleep(15)
 
-                for future in as_completed(futures):
-                    try:
-                        chunks = future.result()
-                        if chunks:  # Only extend if chunks were successfully processed
-                            all_chunks.extend(chunks)
-                        processed_files += 1
-                        logger.info(f"Processed {processed_files}/{total_files} files, total chunks: {len(all_chunks)}")
-                    except Exception as e:
-                        logger.error(f"Error processing file: {e}")
-                        processed_files += 1
+            for future in as_completed(futures):
+                try:
+                    chunks = future.result()
+                    if chunks:  # Only extend if chunks were successfully processed
+                        all_chunks.extend(chunks)
+                    processed_files += 1
+                    logger.info(f"Processed {processed_files}/{total_files} files, total chunks: {len(all_chunks)}")
+                except Exception as e:
+                    logger.error(f"Error processing file: {e}")
+                    processed_files += 1
 
         self.stats.total_chunks = len(all_chunks)
         return all_chunks

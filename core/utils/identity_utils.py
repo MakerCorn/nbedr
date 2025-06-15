@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, TypeVar, Type, cast
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 try:
     from azure.identity import CredentialUnavailableError, DefaultAzureCredential

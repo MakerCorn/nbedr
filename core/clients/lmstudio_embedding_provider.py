@@ -59,7 +59,7 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
         try:
             timeout = ClientTimeout(total=float(self.timeout))
             ssl_context = self._get_ssl_context()
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url,
@@ -189,10 +189,10 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
             except Exception as e:
                 logger.error(f"Failed to get models: {e}")
                 return str(self.model_name)
-        
+
         if not self._models_cache or len(self._models_cache) == 0:
             return str(self.model_name)
-            
+
         return str(self._models_cache[0])
 
     def _get_model_name(self, model_id: str) -> str:
@@ -214,7 +214,7 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
                 cost_per_token=cast(float, model_spec.get("cost_per_token", 0.0)),
                 supports_batch=True,
                 provider="lmstudio",
-                description=str(model_spec.get("description", f"LMStudio model: {model}"))
+                description=str(model_spec.get("description", f"LMStudio model: {model}")),
             )
             self._model_info_cache[model] = info
             return info
@@ -227,7 +227,7 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
             cost_per_token=0.0,
             supports_batch=True,
             provider="lmstudio",
-            description=f"LMStudio model: {model}"
+            description=f"LMStudio model: {model}",
         )
         self._model_info_cache[model] = info
         return info

@@ -25,7 +25,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             "dimensions": 768,
             "max_input_tokens": 8192,
             "cost_per_token": 0.0,
-            "description": "Default Ollama model"
+            "description": "Default Ollama model",
         }
     }
 
@@ -55,7 +55,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
         try:
             timeout = ClientTimeout(total=float(self.timeout))
             ssl_context = self._get_ssl_context()
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url,
@@ -124,10 +124,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
     async def _generate_single_embedding(self, text: str, model: str) -> List[float]:
         """Generate embedding for a single text."""
         try:
-            response = await self._make_request(
-                "/api/embeddings",
-                {"model": model, "prompt": text}
-            )
+            response = await self._make_request("/api/embeddings", {"model": model, "prompt": text})
             if "embedding" in response:
                 embedding = response["embedding"]
                 if isinstance(embedding, list) and all(isinstance(x, (int, float)) for x in embedding):
@@ -151,10 +148,10 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             except Exception as e:
                 logger.error(f"Failed to get models: {e}")
                 return str(self.model_name)
-        
+
         if not self._models_cache:
             return str(self.model_name)
-            
+
         return str(self._models_cache[0])
 
     def _get_model_name(self, model_id: str) -> str:
@@ -184,7 +181,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
                 cost_per_token=cast(float, model_spec.get("cost_per_token", 0.0)),
                 supports_batch=False,  # Ollama processes individually
                 provider="ollama",
-                description=description
+                description=description,
             )
             self._model_info_cache[model] = info
             return info
@@ -197,7 +194,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
             cost_per_token=0.0,
             supports_batch=False,
             provider="ollama",
-            description=f"Ollama model: {model}"
+            description=f"Ollama model: {model}",
         )
         self._model_info_cache[model] = info
         return info
