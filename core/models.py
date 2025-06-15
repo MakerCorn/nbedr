@@ -152,13 +152,25 @@ class EmbeddingBatch:
 class VectorSearchResult:
     """Represents a search result from vector database."""
 
-    chunk: DocumentChunk
-    score: float
-    rank: int
+    id: str
+    content: str
+    source: str
+    metadata: Dict[str, Any]
+    similarity_score: float
+    embedding_model: str
+    created_at: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {"chunk": self.chunk.to_dict(), "score": self.score, "rank": self.rank}
+        return {
+            "id": self.id,
+            "content": self.content,
+            "source": self.source,
+            "metadata": self.metadata,
+            "similarity_score": self.similarity_score,
+            "embedding_model": self.embedding_model,
+            "created_at": self.created_at,
+        }
 
 
 @dataclass

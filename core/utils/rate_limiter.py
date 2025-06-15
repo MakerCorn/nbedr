@@ -73,15 +73,15 @@ class RateLimiter:
         self._lock = threading.RLock()
 
         # Request tracking
-        self._request_times = deque()
-        self._token_usage = deque()
+        self._request_times: deque[float] = deque()
+        self._token_usage: deque[tuple[float, int]] = deque()
 
         # Token bucket state
         self._tokens = 0.0
         self._last_refill = time.time()
 
         # Adaptive rate limiting state
-        self._response_times = deque(maxlen=100)
+        self._response_times: deque[float] = deque(maxlen=100)
         self._current_rate_limit = config.requests_per_minute or 60
         self._last_adaptation = time.time()
 
@@ -171,7 +171,7 @@ class RateLimiter:
                     time.sleep(retry_after)
                 elif self.config.strategy == RateLimitStrategy.ADAPTIVE:
                     # Reduce rate for adaptive strategy
-                    self._current_rate_limit = max(1, self._current_rate_limit * 0.8)
+                    self._current_rate_limit = max(1, int(self._current_rate_limit * 0.8))
                     logger.info(f"Reduced adaptive rate limit to {self._current_rate_limit}")
 
     def _calculate_delay(self, estimated_tokens: Optional[int] = None) -> float:
@@ -315,7 +315,7 @@ class RateLimiter:
             adjustment = 0
 
         old_rate = self._current_rate_limit
-        self._current_rate_limit = max(1, self._current_rate_limit * (1 + adjustment))
+        self._current_rate_limit = max(1, int(self._current_rate_limit * (1 + adjustment)))
 
         if abs(old_rate - self._current_rate_limit) > 1:
             logger.debug(

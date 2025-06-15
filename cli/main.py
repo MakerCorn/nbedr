@@ -357,7 +357,7 @@ def override_config_from_args(config: EmbeddingConfig, args: argparse.Namespace)
 
     # Embedding configuration
     if "openai_key" in arg_dict and arg_dict["openai_key"]:
-        config.openai_key = arg_dict["openai_key"]
+        config.openai_api_key = arg_dict["openai_key"]
     if "embedding_model" in arg_dict and arg_dict["embedding_model"] != "text-embedding-3-small":
         config.embedding_model = arg_dict["embedding_model"]
     if "embedding_dimensions" in arg_dict and arg_dict["embedding_dimensions"] != 1536:
@@ -657,7 +657,7 @@ def handle_create_embeddings(args: argparse.Namespace) -> None:
         logger.info("Processing documents and creating chunks")
         service.update_heartbeat()  # Update heartbeat
         chunks = service.process_documents(
-            config.datapath if config.source_type == "local" else Path(config.source_uri)
+            config.datapath if config.source_type == "local" else Path(config.source_uri or ".")
         )
 
         # Generate embeddings

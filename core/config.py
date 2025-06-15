@@ -201,8 +201,8 @@ class EmbeddingConfig:
         config = cls()
 
         # I/O Configuration
-        if os.getenv("EMBEDDING_DATAPATH"):
-            config.datapath = Path(os.getenv("EMBEDDING_DATAPATH"))
+        if datapath := os.getenv("EMBEDDING_DATAPATH"):
+            config.datapath = Path(datapath)
         config.output = os.getenv("EMBEDDING_OUTPUT", config.output)
         config.output_format = os.getenv("EMBEDDING_OUTPUT_FORMAT", config.output_format)
 
@@ -324,8 +324,8 @@ class EmbeddingConfig:
         config.llamacpp_model_name = os.getenv("LLAMACPP_MODEL_NAME", config.llamacpp_model_name)
         config.llamacpp_timeout = int(os.getenv("LLAMACPP_TIMEOUT", config.llamacpp_timeout))
         config.llamacpp_verify_ssl = os.getenv("LLAMACPP_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
-        if os.getenv("LLAMACPP_DIMENSIONS"):
-            config.llamacpp_dimensions = int(os.getenv("LLAMACPP_DIMENSIONS"))
+        if llamacpp_dimensions := os.getenv("LLAMACPP_DIMENSIONS"):
+            config.llamacpp_dimensions = int(llamacpp_dimensions)
 
         # Vector Database Configuration
         config.vector_db_type = os.getenv("VECTOR_DB_TYPE", config.vector_db_type)
@@ -390,16 +390,16 @@ class EmbeddingConfig:
         config.rate_limit_preset = os.getenv("RATE_LIMIT_PRESET")
 
         # Parse numeric rate limits for embedding providers
-        if os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"):
-            config.rate_limit_requests_per_minute = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"))
-        if os.getenv("RATE_LIMIT_REQUESTS_PER_HOUR"):
-            config.rate_limit_requests_per_hour = int(os.getenv("RATE_LIMIT_REQUESTS_PER_HOUR"))
-        if os.getenv("RATE_LIMIT_TOKENS_PER_MINUTE"):
-            config.rate_limit_tokens_per_minute = int(os.getenv("RATE_LIMIT_TOKENS_PER_MINUTE"))
-        if os.getenv("RATE_LIMIT_TOKENS_PER_HOUR"):
-            config.rate_limit_tokens_per_hour = int(os.getenv("RATE_LIMIT_TOKENS_PER_HOUR"))
-        if os.getenv("RATE_LIMIT_MAX_BURST"):
-            config.rate_limit_max_burst = int(os.getenv("RATE_LIMIT_MAX_BURST"))
+        if requests_per_minute := os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"):
+            config.rate_limit_requests_per_minute = int(requests_per_minute)
+        if requests_per_hour := os.getenv("RATE_LIMIT_REQUESTS_PER_HOUR"):
+            config.rate_limit_requests_per_hour = int(requests_per_hour)
+        if tokens_per_minute := os.getenv("RATE_LIMIT_TOKENS_PER_MINUTE"):
+            config.rate_limit_tokens_per_minute = int(tokens_per_minute)
+        if tokens_per_hour := os.getenv("RATE_LIMIT_TOKENS_PER_HOUR"):
+            config.rate_limit_tokens_per_hour = int(tokens_per_hour)
+        if max_burst := os.getenv("RATE_LIMIT_MAX_BURST"):
+            config.rate_limit_max_burst = int(max_burst)
 
         config.rate_limit_burst_window = float(os.getenv("RATE_LIMIT_BURST_WINDOW", config.rate_limit_burst_window))
         config.rate_limit_target_response_time = float(
@@ -448,16 +448,12 @@ class EmbeddingConfig:
             "VECTOR_STORE_RATE_LIMIT_STRATEGY", config.vector_store_rate_limit_strategy
         )
 
-        if os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE"):
-            config.vector_store_rate_limit_requests_per_minute = int(
-                os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE")
-            )
-        if os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_HOUR"):
-            config.vector_store_rate_limit_requests_per_hour = int(
-                os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_HOUR")
-            )
-        if os.getenv("VECTOR_STORE_RATE_LIMIT_MAX_BURST"):
-            config.vector_store_rate_limit_max_burst = int(os.getenv("VECTOR_STORE_RATE_LIMIT_MAX_BURST"))
+        if vs_requests_per_minute := os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_MINUTE"):
+            config.vector_store_rate_limit_requests_per_minute = int(vs_requests_per_minute)
+        if vs_requests_per_hour := os.getenv("VECTOR_STORE_RATE_LIMIT_REQUESTS_PER_HOUR"):
+            config.vector_store_rate_limit_requests_per_hour = int(vs_requests_per_hour)
+        if vs_max_burst := os.getenv("VECTOR_STORE_RATE_LIMIT_MAX_BURST"):
+            config.vector_store_rate_limit_max_burst = int(vs_max_burst)
 
         config.vector_store_rate_limit_burst_window = float(
             os.getenv("VECTOR_STORE_RATE_LIMIT_BURST_WINDOW", config.vector_store_rate_limit_burst_window)
