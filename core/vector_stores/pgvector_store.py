@@ -51,6 +51,14 @@ class PGVectorStore(BaseVectorStore):
             raise ValueError("PostgreSQL password is required for pgvector")
 
         self.pool: Optional[Pool] = None
+        self._validate_table_name()
+
+    def _validate_table_name(self) -> None:
+        """Validate table name to prevent SQL injection."""
+        import re
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", self.table_name):
+            raise ValueError(f"Invalid table name: {self.table_name}. Must be alphanumeric with underscores.")
 
     async def _get_connection_pool(self) -> Pool:
         """Get or create connection pool.
@@ -176,6 +184,7 @@ class PGVectorStore(BaseVectorStore):
 
             async with pool.acquire() as conn:
                 # Create a prepared statement for better performance
+                # Table name is validated in constructor to prevent injection
                 insert_stmt = await conn.prepare(
                     f"""
                     INSERT INTO {self.table_name}
@@ -188,7 +197,7 @@ class PGVectorStore(BaseVectorStore):
                         embedding_model = EXCLUDED.embedding_model,
                         content_vector = EXCLUDED.content_vector,
                         created_at = EXCLUDED.created_at;
-                    """
+                    """  # nosec B608
                 )
 
                 for chunk in chunks:
@@ -269,6 +278,7 @@ class PGVectorStore(BaseVectorStore):
                 if conditions:
                     where_clause = f"WHERE {' AND '.join(conditions)}"
 
+            # Table name is validated in constructor to prevent injection
             query = f"""
                 SELECT id, content, source, metadata, embedding_model, created_at,
                        1 - (content_vector <=> $1) as similarity_score
@@ -276,7 +286,7 @@ class PGVectorStore(BaseVectorStore):
                 {where_clause}
                 ORDER BY content_vector <=> $1
                 LIMIT {top_k};
-            """
+            """  # nosec B608
 
             async with pool.acquire() as conn:
                 rows = await conn.fetch(query, *filter_params)
@@ -321,11 +331,12 @@ class PGVectorStore(BaseVectorStore):
             pool = await self._get_connection_pool()
 
             async with pool.acquire() as conn:
+                # Table name is validated in constructor to prevent injection
                 result = await conn.execute(
                     f"""
                     DELETE FROM {self.table_name}
                     WHERE id = ANY($1::text[]);
-                    """,
+                    """,  # nosec B608
                     vector_ids,
                 )
 
@@ -348,6 +359,7 @@ class PGVectorStore(BaseVectorStore):
             pool = await self._get_connection_pool()
 
             async with pool.acquire() as conn:
+                # Table name is validated in constructor to prevent injection
                 stats = await conn.fetchrow(
                     f"""
                     SELECT
@@ -356,7 +368,7 @@ class PGVectorStore(BaseVectorStore):
                         MIN(created_at) as earliest_document,
                         MAX(created_at) as latest_document
                     FROM {self.table_name};
-                    """,
+                    """,  # nosec B608
                     self.table_name,
                 )
 

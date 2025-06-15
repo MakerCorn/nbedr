@@ -8,7 +8,6 @@ import fcntl
 import json
 import logging
 import os
-import pickle
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -66,11 +65,11 @@ class FAISSVectorStore(BaseVectorStore):
                     with self._acquire_file_lock():
                         self.index = faiss.read_index(str(index_file))
 
-                        with open(metadata_file, "rb") as f:
-                            data = pickle.load(f)
+                        with open(metadata_file, "r", encoding="utf-8") as f:
+                            data = json.load(f)
                             self.document_map = data.get("document_map", {})
                             self.next_id = data.get("next_id", 0)
-                except (FileNotFoundError, pickle.PickleError) as e:
+                except (FileNotFoundError, json.JSONDecodeError) as e:
                     logger.warning(f"Failed to load existing index, creating new one: {e}")
                     self._create_new_index()
             else:
@@ -257,8 +256,8 @@ class FAISSVectorStore(BaseVectorStore):
                 faiss.write_index(self.index, str(index_file))
 
                 # Save metadata
-                with open(metadata_file, "wb") as f:
-                    pickle.dump({"document_map": self.document_map, "next_id": self.next_id}, f)
+                with open(metadata_file, "w", encoding="utf-8") as f:
+                    json.dump({"document_map": self.document_map, "next_id": self.next_id}, f, indent=2)
 
                 logger.debug(f"Saved FAISS index to {index_file}")
 

@@ -156,8 +156,9 @@ class BaseEmbeddingProvider(ABC):
         embeddings = []
         for text in texts:
             # Generate deterministic mock embedding based on text hash
-            random.seed(hash(text) % (2**32))
-            embedding = [random.uniform(-1, 1) for _ in range(dimensions)]
+            # Note: This is for testing/mocking only, not cryptographic use
+            random.seed(hash(text) % (2**32))  # nosec B311
+            embedding = [random.uniform(-1, 1) for _ in range(dimensions)]  # nosec B311
             embeddings.append(embedding)
 
         return embeddings

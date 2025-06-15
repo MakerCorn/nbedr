@@ -101,7 +101,8 @@ class S3InputSource(BaseInputSource):
                 raise SourceValidationError("S3 client not initialized")
             # Test bucket access by listing objects with limit
             client = self.s3_client
-            assert client is not None
+            if client is None:
+                raise SourceValidationError("S3 client is None after initialization")
             response = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: client.list_objects_v2(Bucket=self.bucket_name, Prefix=self.prefix, MaxKeys=1)
             )
@@ -145,7 +146,8 @@ class S3InputSource(BaseInputSource):
                 if not self.s3_client:
                     raise SourceValidationError("S3 client not initialized")
                 client = self.s3_client
-                assert client is not None
+                if client is None:
+                    raise SourceValidationError("S3 client is None after initialization")
                 response = await asyncio.get_event_loop().run_in_executor(
                     None, lambda: client.list_objects_v2(**list_params)
                 )
@@ -190,7 +192,8 @@ class S3InputSource(BaseInputSource):
                 raise SourceValidationError("S3 client not initialized")
             # Download object content
             client = self.s3_client
-            assert client is not None
+            if client is None:
+                raise SourceValidationError("S3 client is None after initialization")
             response = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: client.get_object(Bucket=self.bucket_name, Key=document.metadata["s3_key"])
             )

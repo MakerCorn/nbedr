@@ -17,7 +17,7 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 # Import after path manipulation
-from core.config import EmbeddingConfig  # noqa: E402
+from core.config import EmbeddingConfig, get_config  # noqa: E402
 from core.utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator  # noqa: E402
 
 

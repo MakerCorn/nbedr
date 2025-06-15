@@ -21,7 +21,7 @@ class RateLimitStrategy(Enum):
 
     FIXED_WINDOW = "fixed_window"  # Fixed time window
     SLIDING_WINDOW = "sliding_window"  # Sliding time window
-    TOKEN_BUCKET = "token_bucket"  # Token bucket algorithm
+    TOKEN_BUCKET = "token_bucket"  # Token bucket algorithm  # nosec B105
     ADAPTIVE = "adaptive"  # Adaptive based on response times
 
 
