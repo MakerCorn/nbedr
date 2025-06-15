@@ -8,8 +8,37 @@ import logging
 import ssl
 from typing import Any, Dict, List, Optional, Union, cast
 
-import aiohttp
-from aiohttp import ClientTimeout
+# Handle optional aiohttp dependency
+try:
+    import aiohttp
+    from aiohttp import ClientTimeout
+
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    # Mock classes for when aiohttp is not available
+    class _MockClientTimeout:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class _MockAiohttp:
+        ClientTimeout = _MockClientTimeout
+
+        class ClientSession:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            async def post(self, *args, **kwargs):
+                raise RuntimeError("aiohttp not available - install with: pip install aiohttp")
+
+    aiohttp = _MockAiohttp()  # type: ignore
+    ClientTimeout = _MockClientTimeout  # type: ignore
+    AIOHTTP_AVAILABLE = False
 
 from ..utils.embedding_utils import normalize_embedding
 from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
@@ -36,6 +65,11 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
             config: Configuration dictionary containing provider-specific settings
         """
         super().__init__(config)
+
+        # Check if aiohttp is available
+        if not AIOHTTP_AVAILABLE:
+            logger.warning("aiohttp not available - LMStudio provider will use mock embeddings")
+
         self.model_name = config.get("model", "default")
         self.base_url = str(config.get("base_url", "http://localhost:1234"))
         self.timeout = int(config.get("timeout", 30))
@@ -96,6 +130,12 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
         """
         if not texts:
             raise ValueError("No texts provided for embedding")
+
+        # Check if aiohttp is available
+        if not AIOHTTP_AVAILABLE:
+            logger.warning("aiohttp not available - generating mock embeddings")
+            mock_embeddings = self._generate_mock_embeddings(texts, 1536)
+            return EmbeddingResult(embeddings=mock_embeddings, model=model or self.model_name, dimensions=1536)
 
         if model is None:
             model = await self._get_available_model()

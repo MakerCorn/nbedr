@@ -121,6 +121,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Dependency Management Issues
+- **Optional Dependency Handling**: Fixed CI/CD test failures caused by missing optional dependencies
+  - **AioHTTP Import Errors**: Resolved `ModuleNotFoundError: No module named 'aiohttp'` in CI environments
+  - **Mock Class Pattern**: Applied consistent mock class pattern for optional HTTP client dependencies
+  - **Graceful Fallback**: Local providers (LlamaCpp, LMStudio, Ollama) now fallback to mock embeddings when aiohttp unavailable
+  - **Installation Flexibility**: Users can now install only needed dependencies with `pip install nbedr[local]`
+  - **CI/CD Compatibility**: Tests now run successfully in environments without optional dependencies
+
 #### Security Vulnerabilities
 - **Bandit Security Issues**: Resolved all 13 security warnings identified by Bandit scan
   - **B301/B403**: Eliminated pickle usage in FAISS metadata storage
