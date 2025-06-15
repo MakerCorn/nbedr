@@ -40,7 +40,7 @@ class LlamaCppEmbeddingProvider(BaseEmbeddingProvider):
         self.expected_dimensions = config.get("dimensions")
 
         # Cache for model info
-        self._model_info_cache = {}
+        self._model_info_cache: Dict[str, Any] = {}
         self._server_info = None
 
     async def _make_request(self, endpoint: str, data: Optional[Dict] = None, method: str = "GET") -> Dict[str, Any]:

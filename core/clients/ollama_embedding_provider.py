@@ -59,7 +59,7 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
 
         # Cache for discovered models
         self._models_cache = None
-        self._model_info_cache = {}
+        self._model_info_cache: Dict[str, Any] = {}
 
     async def _make_request(self, endpoint: str, data: Optional[Dict] = None, method: str = "GET") -> Dict[str, Any]:
         """Make HTTP request to Ollama server.
@@ -85,11 +85,11 @@ class OllamaEmbeddingProvider(BaseEmbeddingProvider):
                     if response.status == 404:
                         raise ValueError(f"Model or endpoint not found: {endpoint}")
                     response.raise_for_status()
-                    return await response.json()
+                    return await response.json()  # type: ignore[no-any-return]
             else:
                 async with session.get(url, headers=headers) as response:
                     response.raise_for_status()
-                    return await response.json()
+                    return await response.json()  # type: ignore[no-any-return]
 
     async def generate_embeddings(
         self, texts: List[str], model: Optional[str] = None, batch_size: Optional[int] = None, **kwargs

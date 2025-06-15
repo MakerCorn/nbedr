@@ -37,7 +37,7 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
 
         # Cache for discovered models
         self._models_cache = None
-        self._model_info_cache = {}
+        self._model_info_cache: Dict[str, Any] = {}
 
     async def _make_request(self, endpoint: str, data: Optional[Dict] = None, method: str = "GET") -> Dict[str, Any]:
         """Make HTTP request to LMStudio server.

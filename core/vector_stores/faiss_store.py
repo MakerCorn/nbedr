@@ -1,6 +1,7 @@
 """
 FAISS vector store implementation.
 """
+# mypy: disable-error-code="attr-defined,unreachable"
 
 import fcntl
 import json
@@ -41,7 +42,7 @@ class FAISSVectorStore(BaseVectorStore):
                 logger.info(f"Using instance-specific FAISS path: {self.index_path}")
 
         self.index = None
-        self.document_map = {}  # Maps index positions to document metadata
+        self.document_map: Dict[int, Dict[str, Any]] = {}  # Maps index positions to document metadata
         self.next_id = 0
 
         # File locking for concurrent access

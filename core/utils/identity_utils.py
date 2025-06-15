@@ -12,11 +12,11 @@ except ImportError:
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Dict, Optional
 
 log = logging.getLogger(__name__)
 
-tokens = {}
+tokens: Dict[str, Any] = {}
 
 
 def get_db_token() -> Optional[str]:
