@@ -1,18 +1,21 @@
+from typing import Any, Dict, Optional, TypeVar, Type, cast
+
+T = TypeVar('T')
+
 try:
     from azure.identity import CredentialUnavailableError, DefaultAzureCredential
 
     credential = DefaultAzureCredential()
     AZURE_AVAILABLE = True
 except ImportError:
-    DefaultAzureCredential = None
-    CredentialUnavailableError = Exception
-    credential = None
+    DefaultAzureCredential = None  # type: ignore
+    CredentialUnavailableError = Exception  # type: ignore
+    credential = None  # type: ignore
     AZURE_AVAILABLE = False
 
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
 
 log = logging.getLogger(__name__)
 

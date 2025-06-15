@@ -206,7 +206,7 @@ class FAISSVectorStore(BaseVectorStore):
                     source=doc_data["source"],
                     metadata=doc_data.get("metadata", {}),
                     similarity_score=float(score),
-                    embedding_model=doc_data.get("embedding_model"),
+                    embedding_model=str(doc_data.get("embedding_model", "")),  # Convert to str or empty string
                     created_at=doc_data.get("created_at"),
                 )
                 search_results.append(search_result)

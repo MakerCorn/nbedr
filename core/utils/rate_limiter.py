@@ -180,14 +180,14 @@ class RateLimiter:
 
         if self.config.strategy == RateLimitStrategy.FIXED_WINDOW:
             return self._fixed_window_delay(now)
-        elif self.config.strategy == RateLimitStrategy.SLIDING_WINDOW:
-            return self._sliding_window_delay(now, estimated_tokens)
         elif self.config.strategy == RateLimitStrategy.TOKEN_BUCKET:
             return self._token_bucket_delay(now, estimated_tokens)
         elif self.config.strategy == RateLimitStrategy.ADAPTIVE:
             return self._adaptive_delay(now, estimated_tokens)
-        else:
-            return 0.0
+        
+        # Only reached if strategy is invalid or None
+        logger.warning(f"Unknown rate limit strategy: {self.config.strategy}")
+        return 0.0
 
     def _fixed_window_delay(self, now: float) -> float:
         """Calculate delay for fixed window strategy."""

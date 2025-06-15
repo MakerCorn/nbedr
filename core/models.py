@@ -159,10 +159,14 @@ class VectorSearchResult:
     similarity_score: float
     embedding_model: str
     created_at: Optional[str] = None
+    # For backward compatibility with tests
+    chunk: Optional[DocumentChunk] = None
+    score: Optional[float] = None
+    rank: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {
+        result = {
             "id": self.id,
             "content": self.content,
             "source": self.source,
@@ -171,6 +175,13 @@ class VectorSearchResult:
             "embedding_model": self.embedding_model,
             "created_at": self.created_at,
         }
+        if self.chunk:
+            result["chunk"] = self.chunk.to_dict()
+        if self.score is not None:
+            result["score"] = self.score
+        if self.rank is not None:
+            result["rank"] = self.rank
+        return result
 
 
 @dataclass

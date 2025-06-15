@@ -6,9 +6,11 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 
 import asyncpg
+from asyncpg import Pool, Connection
+from asyncpg.pool import PoolConnectionProxy
 
 from ..models import DocumentChunk, VectorSearchResult
 from .base import BaseVectorStore
@@ -19,40 +21,74 @@ logger = logging.getLogger(__name__)
 class PGVectorStore(BaseVectorStore):
     """PostgreSQL with pgvector extension implementation of vector store."""
 
-    def __init__(self, config: Dict[str, Any]):
-        """Initialize PGVector store."""
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize PGVector store.
+
+        Args:
+            config: Configuration dictionary containing:
+                - pgvector_host: PostgreSQL host (default: localhost)
+                - pgvector_port: PostgreSQL port (default: 5432)
+                - pgvector_database: Database name (default: vectordb)
+                - pgvector_user: Database user (default: postgres)
+                - pgvector_password: Database password (required)
+                - pgvector_table_name: Table name (default: rag_embeddings)
+                - embedding_dimensions: Embedding dimensions (default: 1536)
+
+        Raises:
+            ValueError: If required configuration values are missing
+        """
         super().__init__(config)
 
-        self.host = config.get("pgvector_host", "localhost")
-        self.port = config.get("pgvector_port", 5432)
-        self.database = config.get("pgvector_database", "vectordb")
-        self.user = config.get("pgvector_user", "postgres")
+        self.host = str(config.get("pgvector_host", "localhost"))
+        self.port = int(config.get("pgvector_port", 5432))
+        self.database = str(config.get("pgvector_database", "vectordb"))
+        self.user = str(config.get("pgvector_user", "postgres"))
         self.password = config.get("pgvector_password")
-        self.table_name = config.get("pgvector_table_name", "rag_embeddings")
-        self.embedding_dimensions = config.get("embedding_dimensions", 1536)
+        self.table_name = str(config.get("pgvector_table_name", "rag_embeddings"))
+        self.embedding_dimensions = int(config.get("embedding_dimensions", 1536))
 
         if not self.password:
             raise ValueError("PostgreSQL password is required for pgvector")
 
-        self.pool = None
+        self.pool: Optional[Pool] = None
 
-    async def _get_connection_pool(self):
-        """Get or create connection pool."""
+    async def _get_connection_pool(self) -> Pool:
+        """Get or create connection pool.
+
+        Returns:
+            asyncpg connection pool
+
+        Raises:
+            RuntimeError: If connection pool creation fails
+        """
         if not self.pool:
-            self.pool = await asyncpg.create_pool(
-                host=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.user,
-                password=self.password,
-                min_size=2,
-                max_size=10,
-                command_timeout=60,
-            )
+            try:
+                self.pool = await asyncpg.create_pool(
+                    host=self.host,
+                    port=self.port,
+                    database=self.database,
+                    user=self.user,
+                    password=self.password,
+                    min_size=2,
+                    max_size=10,
+                    command_timeout=60,
+                )
+                if not self.pool:
+                    raise RuntimeError("Failed to create connection pool")
+            except Exception as e:
+                raise RuntimeError(f"Failed to create connection pool: {e}")
+
         return self.pool
 
     async def initialize(self) -> None:
-        """Initialize the pgvector table and extension."""
+        """Initialize the pgvector table and extension.
+
+        Creates the pgvector extension if not exists and sets up the required table
+        with appropriate indexes.
+
+        Raises:
+            RuntimeError: If table initialization fails
+        """
         try:
             pool = await self._get_connection_pool()
 
@@ -65,8 +101,8 @@ class PGVectorStore(BaseVectorStore):
                 table_exists = await conn.fetchval(
                     """
                     SELECT EXISTS (
-                        SELECT FROM information_schema.tables
-                        WHERE table_schema = 'public'
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
                         AND table_name = $1
                     );
                     """,
@@ -91,7 +127,7 @@ class PGVectorStore(BaseVectorStore):
                         content_vector vector({self.embedding_dimensions}),
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     );
-                """
+                    """
                 )
 
                 # Create vector similarity index
@@ -100,30 +136,35 @@ class PGVectorStore(BaseVectorStore):
                     CREATE INDEX ON {self.table_name}
                     USING ivfflat (content_vector vector_cosine_ops)
                     WITH (lists = 100);
-                """
+                    """
                 )
 
                 # Create additional indexes
                 await conn.execute(
                     f"""
                     CREATE INDEX idx_{self.table_name}_source ON {self.table_name}(source);
-                """
-                )
-
-                await conn.execute(
-                    f"""
                     CREATE INDEX idx_{self.table_name}_metadata ON {self.table_name} USING GIN(metadata);
-                """
+                    """
                 )
 
                 logger.info(f"Created pgvector table: {self.table_name}")
 
         except Exception as e:
             logger.error(f"Failed to initialize pgvector table: {e}")
-            raise
+            raise RuntimeError(f"Failed to initialize pgvector table: {e}")
 
     async def add_documents(self, chunks: List[DocumentChunk]) -> List[str]:
-        """Add document chunks to pgvector."""
+        """Add document chunks to pgvector.
+
+        Args:
+            chunks: List of document chunks to add
+
+        Returns:
+            List of vector IDs for the added documents
+
+        Raises:
+            RuntimeError: If document addition fails
+        """
         try:
             # Apply rate limiting for vector store operations
             await self._apply_rate_limiting("add_documents")
@@ -131,9 +172,25 @@ class PGVectorStore(BaseVectorStore):
             start_time = time.time()
 
             pool = await self._get_connection_pool()
-            vector_ids = []
+            vector_ids: List[str] = []
 
             async with pool.acquire() as conn:
+                # Create a prepared statement for better performance
+                insert_stmt = await conn.prepare(
+                    f"""
+                    INSERT INTO {self.table_name}
+                    (id, content, source, metadata, embedding_model, content_vector, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (id) DO UPDATE SET
+                        content = EXCLUDED.content,
+                        source = EXCLUDED.source,
+                        metadata = EXCLUDED.metadata,
+                        embedding_model = EXCLUDED.embedding_model,
+                        content_vector = EXCLUDED.content_vector,
+                        created_at = EXCLUDED.created_at;
+                    """
+                )
+
                 for chunk in chunks:
                     if not chunk.embedding:
                         logger.warning(f"Chunk {chunk.id} has no embedding, skipping")
@@ -142,27 +199,15 @@ class PGVectorStore(BaseVectorStore):
                     vector_id = chunk.vector_id or chunk.id
                     vector_ids.append(vector_id)
 
-                    # Insert document
-                    await conn.execute(
-                        f"""
-                        INSERT INTO {self.table_name}
-                        (id, content, source, metadata, embedding_model, content_vector, created_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7)
-                        ON CONFLICT (id) DO UPDATE SET
-                            content = EXCLUDED.content,
-                            source = EXCLUDED.source,
-                            metadata = EXCLUDED.metadata,
-                            embedding_model = EXCLUDED.embedding_model,
-                            content_vector = EXCLUDED.content_vector,
-                            created_at = EXCLUDED.created_at;
-                    """,
+                    # Insert document using prepared statement
+                    await insert_stmt.fetch(
                         vector_id,
                         chunk.content,
                         chunk.source,
                         json.dumps(chunk.metadata) if chunk.metadata else "{}",
                         chunk.embedding_model,
                         chunk.embedding,
-                        chunk.created_at,
+                        chunk.created_at or datetime.utcnow(),
                     )
 
                 logger.info(f"Successfully added {len(vector_ids)} documents to pgvector")
@@ -176,12 +221,27 @@ class PGVectorStore(BaseVectorStore):
         except Exception as e:
             self._record_operation_error("add_documents_error")
             logger.error(f"Failed to add documents to pgvector: {e}")
-            raise
+            raise RuntimeError(f"Failed to add documents to pgvector: {e}")
 
     async def search(
-        self, query_embedding: List[float], top_k: int = 10, filters: Optional[Dict[str, Any]] = None
+        self, 
+        query_embedding: List[float], 
+        top_k: int = 10, 
+        filters: Optional[Dict[str, Any]] = None
     ) -> List[VectorSearchResult]:
-        """Search for similar vectors in pgvector."""
+        """Search for similar vectors in pgvector.
+
+        Args:
+            query_embedding: Query vector to search for
+            top_k: Number of results to return
+            filters: Optional filters to apply to the search
+
+        Returns:
+            List of search results
+
+        Raises:
+            RuntimeError: If search fails
+        """
         try:
             # Apply rate limiting for vector store operations
             await self._apply_rate_limiting("search")
@@ -222,22 +282,20 @@ class PGVectorStore(BaseVectorStore):
             """
 
             async with pool.acquire() as conn:
-                rows = await conn.fetch(query, query_embedding, *filter_params)
+                rows = await conn.fetch(query, *filter_params)
 
-                search_results = []
+                search_results: List[VectorSearchResult] = []
                 for row in rows:
-                    search_result = VectorSearchResult(
-                        id=row["id"],
-                        content=row["content"],
-                        source=row["source"],
+                    search_results.append(VectorSearchResult(
+                        id=str(row["id"]),
+                        content=str(row["content"]),
+                        source=str(row["source"]),
                         metadata=json.loads(row["metadata"]) if row["metadata"] else {},
                         similarity_score=float(row["similarity_score"]),
-                        embedding_model=row["embedding_model"],
+                        embedding_model=str(row["embedding_model"]) if row["embedding_model"] else "unknown",  # Default value when None
                         created_at=row["created_at"].isoformat() if row["created_at"] else None,
-                    )
-                    search_results.append(search_result)
+                    ))
 
-                # Record operation response time
                 response_time = time.time() - start_time
                 self._record_operation_response(response_time, "search")
 
@@ -247,24 +305,29 @@ class PGVectorStore(BaseVectorStore):
         except Exception as e:
             self._record_operation_error("search_error")
             logger.error(f"Failed to search pgvector: {e}")
-            raise
+            raise RuntimeError(f"Failed to search pgvector: {e}")
 
     async def delete_documents(self, vector_ids: List[str]) -> bool:
-        """Delete documents from pgvector."""
+        """Delete documents from pgvector.
+
+        Args:
+            vector_ids: List of vector IDs to delete
+
+        Returns:
+            True if any documents were deleted, False otherwise
+        """
         try:
             pool = await self._get_connection_pool()
 
             async with pool.acquire() as conn:
-                # Delete documents
                 result = await conn.execute(
                     f"""
                     DELETE FROM {self.table_name}
-                    WHERE id = ANY($1);
-                """,
+                    WHERE id = ANY($1::text[]);
+                    """,
                     vector_ids,
                 )
 
-                # Extract number of deleted rows from result
                 deleted_count = int(result.split()[-1]) if result.startswith("DELETE") else 0
                 logger.info(f"Deleted {deleted_count} documents from pgvector")
 
@@ -275,44 +338,48 @@ class PGVectorStore(BaseVectorStore):
             return False
 
     async def get_stats(self) -> Dict[str, Any]:
-        """Get statistics about the pgvector table."""
+        """Get statistics about the pgvector table.
+
+        Returns:
+            Dictionary containing table statistics
+        """
         try:
             pool = await self._get_connection_pool()
 
             async with pool.acquire() as conn:
-                # Get table stats
                 stats = await conn.fetchrow(
                     f"""
                     SELECT
                         COUNT(*) as document_count,
-                        pg_total_relation_size('{self.table_name}') as storage_size,
+                        pg_total_relation_size($1::text) as storage_size,
                         MIN(created_at) as earliest_document,
                         MAX(created_at) as latest_document
                     FROM {self.table_name};
-                """
+                    """,
+                    self.table_name,
                 )
 
-                # Get table info
                 table_info = await conn.fetchrow(
-                    f"""
+                    """
                     SELECT
                         schemaname,
                         tablename,
                         tableowner
                     FROM pg_tables
-                    WHERE tablename = '{self.table_name}';
-                """
+                    WHERE tablename = $1;
+                    """,
+                    self.table_name,
                 )
 
                 return {
                     "table_name": self.table_name,
-                    "document_count": stats["document_count"],
-                    "storage_size": stats["storage_size"],
+                    "document_count": int(stats["document_count"]),
+                    "storage_size": int(stats["storage_size"]),
                     "vector_dimensions": self.embedding_dimensions,
                     "earliest_document": stats["earliest_document"].isoformat() if stats["earliest_document"] else None,
                     "latest_document": stats["latest_document"].isoformat() if stats["latest_document"] else None,
-                    "schema": table_info["schemaname"] if table_info else None,
-                    "owner": table_info["tableowner"] if table_info else None,
+                    "schema": str(table_info["schemaname"]) if table_info else None,
+                    "owner": str(table_info["tableowner"]) if table_info else None,
                 }
 
         except Exception as e:
@@ -322,5 +389,10 @@ class PGVectorStore(BaseVectorStore):
     async def close(self) -> None:
         """Close pgvector connection pool."""
         if self.pool:
-            await self.pool.close()
-            logger.info("PGVector connection pool closed")
+            try:
+                await self.pool.close()
+                logger.info("PGVector connection pool closed")
+            except Exception as e:
+                logger.error(f"Error closing pgvector connection pool: {e}")
+            finally:
+                self.pool = None

@@ -77,7 +77,7 @@ class TestEmbeddingConfig:
         assert config.output == "./env_output"
         assert config.chunk_size == 256
         assert config.doctype == "txt"
-        assert config.openai_key == "env_test_key"
+        assert config.openai_api_key == "env_test_key"
         assert config.embedding_model == "text-embedding-ada-002"
         assert config.vector_db_type == "chroma"
         assert config.workers == 2
@@ -186,7 +186,7 @@ class TestEmbeddingConfig:
             config = EmbeddingConfig.from_env(env_file)
             assert config.chunk_size == 2048
             assert config.embedding_model == "custom-model"
-            assert config.openai_key == "file_test_key"
+            assert config.openai_api_key == "file_test_key"
             assert config.vector_db_type == "pinecone"
         finally:
             os.unlink(env_file)
@@ -279,7 +279,7 @@ class TestEmbeddingConfig:
 
     def test_validate_missing_openai_key(self, sample_config):
         """Test validation failure for missing OpenAI API key."""
-        sample_config.openai_key = None
+        sample_config.openai_api_key = None
         sample_config.use_azure_identity = False
 
         with pytest.raises(ValueError, match="OpenAI API key is required"):
@@ -287,12 +287,12 @@ class TestEmbeddingConfig:
 
     def test_validate_demo_mode_allowed(self, sample_config):
         """Test that demo mode with special key is allowed."""
-        sample_config.openai_key = "demo_key_for_testing"
+        sample_config.openai_api_key = "demo_key_for_testing"
         sample_config.validate()  # Should pass
 
     def test_validate_azure_identity_mode(self, sample_config):
         """Test validation with Azure identity mode."""
-        sample_config.openai_key = None
+        sample_config.openai_api_key = None
         sample_config.use_azure_identity = True
         sample_config.validate()  # Should pass without OpenAI key
 
@@ -300,16 +300,16 @@ class TestEmbeddingConfig:
         """Test validation of datapath existence for local sources."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Test with existing path
-            config = EmbeddingConfig(datapath=Path(temp_dir), source_type="local", openai_key="test_key")
+            config = EmbeddingConfig(datapath=Path(temp_dir), source_type="local", openai_api_key="test_key")
             config.validate()  # Should pass
 
         # Test with non-existing path (not current directory)
-        config = EmbeddingConfig(datapath=Path("/non/existent/path"), source_type="local", openai_key="test_key")
+        config = EmbeddingConfig(datapath=Path("/non/existent/path"), source_type="local", openai_api_key="test_key")
         with pytest.raises(ValueError, match="Data path does not exist"):
             config.validate()
 
         # Test with current directory (should pass)
-        config = EmbeddingConfig(datapath=Path("."), source_type="local", openai_key="test_key")
+        config = EmbeddingConfig(datapath=Path("."), source_type="local", openai_api_key="test_key")
         config.validate()  # Should pass
 
     @pytest.mark.parametrize("source_type", ["local", "s3", "sharepoint"])
@@ -357,7 +357,7 @@ class TestGetConfig:
 
         config = get_config()
         assert isinstance(config, EmbeddingConfig)
-        assert config.openai_key == "test_key"
+        assert config.openai_api_key == "test_key"
 
     def test_get_config_validation_failure(self, clean_environment, monkeypatch):
         """Test that get_config raises validation errors."""
@@ -376,7 +376,7 @@ class TestGetConfig:
 
         try:
             config = get_config(env_file)
-            assert config.openai_key == "file_test_key"
+            assert config.openai_api_key == "file_test_key"
             assert config.chunk_size == 1024
         finally:
             os.unlink(env_file)
@@ -416,7 +416,7 @@ class TestConfigIntegration:
         assert config.chunk_size == 1024
         assert config.doctype == "pdf"
         assert config.chunking_strategy == "sentence"
-        assert config.openai_key == "test_openai_key"
+        assert config.openai_api_key == "test_openai_key"
         assert config.embedding_model == "text-embedding-ada-002"
         assert config.embedding_dimensions == 1536
         assert config.vector_db_type == "pinecone"
@@ -434,7 +434,7 @@ class TestConfigIntegration:
 
         # Environment values should override defaults
         assert config.chunk_size == 2048  # Not default 512
-        assert config.openai_key == "env_key"
+        assert config.openai_api_key == "env_key"
 
         # Non-overridden values should remain defaults
         assert config.doctype == "pdf"  # Default value

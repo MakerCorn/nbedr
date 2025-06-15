@@ -292,7 +292,17 @@ class TestVectorSearchResult:
 
     def test_basic_creation(self, sample_document_chunk):
         """Test basic VectorSearchResult creation."""
-        result = VectorSearchResult(chunk=sample_document_chunk, score=0.85, rank=1)
+        result = VectorSearchResult(
+            id="test-id",
+            content="Test content",
+            source="test-source",
+            metadata={},
+            similarity_score=0.85,
+            embedding_model="test-model",
+            chunk=sample_document_chunk,
+            score=0.85,
+            rank=1
+        )
 
         assert result.chunk == sample_document_chunk
         assert result.score == 0.85
@@ -300,7 +310,17 @@ class TestVectorSearchResult:
 
     def test_to_dict(self, sample_document_chunk):
         """Test VectorSearchResult.to_dict serialization."""
-        result = VectorSearchResult(chunk=sample_document_chunk, score=0.85, rank=1)
+        result = VectorSearchResult(
+            id="test-id",
+            content="Test content",
+            source="test-source",
+            metadata={},
+            similarity_score=0.85,
+            embedding_model="test-model",
+            chunk=sample_document_chunk,
+            score=0.85,
+            rank=1
+        )
 
         serialized = result.to_dict()
 

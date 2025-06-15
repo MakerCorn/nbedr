@@ -5,73 +5,83 @@ LMStudio embedding provider implementation.
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional
+import ssl
+from typing import Any, Dict, List, Optional, Union, cast
 
 import aiohttp
+from aiohttp import ClientTimeout
 
 from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
+from ..utils.embedding_utils import normalize_embedding
 
 logger = logging.getLogger(__name__)
 
 
 class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
-    """LMStudio embedding provider for local models."""
+    """LMStudio embedding provider."""
 
-    def __init__(self, config: Dict[str, Any]):
-        """Initialize LMStudio embedding provider.
+    KNOWN_MODELS = {
+        "default": {
+            "dimensions": 768,
+            "max_input_tokens": 8192,
+            "cost_per_token": 0.0,
+            "description": "Default LMStudio model",
+        }
+    }
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize the provider.
 
         Args:
-            config: Configuration containing:
-                - base_url: LMStudio server URL (default: http://localhost:1234)
-                - api_key: API key if required (optional)
-                - default_model: Default model to use
-                - timeout: Request timeout in seconds
-                - verify_ssl: Whether to verify SSL certificates
+            config: Configuration dictionary containing provider-specific settings
         """
         super().__init__(config)
+        self.model_name = config.get("model", "default")
+        self.base_url = str(config.get("base_url", "http://localhost:1234"))
+        self.timeout = int(config.get("timeout", 30))
+        self.verify_ssl = bool(config.get("verify_ssl", True))
+        self._models_cache: Optional[List[str]] = None
+        self._model_info_cache: Dict[str, EmbeddingModelInfo] = {}
 
-        self.base_url = config.get("base_url", "http://localhost:1234").rstrip("/")
-        self.api_key = config.get("api_key")
-        self.timeout = config.get("timeout", 60)
-        self.verify_ssl = config.get("verify_ssl", True)
+    def _get_ssl_context(self) -> Union[ssl.SSLContext, bool]:
+        """Get SSL context based on configuration."""
+        if not self.verify_ssl:
+            return False
+        ssl_context = ssl.create_default_context()
+        return ssl_context
 
-        # Cache for discovered models
-        self._models_cache = None
-        self._model_info_cache: Dict[str, Any] = {}
+    async def _make_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Make HTTP request to LMStudio API."""
+        headers = {"Content-Type": "application/json"}
+        url = f"{self.base_url}{endpoint}"
+        json_data = data or {}
 
-    async def _make_request(self, endpoint: str, data: Optional[Dict] = None, method: str = "GET") -> Dict[str, Any]:
-        """Make HTTP request to LMStudio server.
+        try:
+            timeout = ClientTimeout(total=float(self.timeout))
+            ssl_context = self._get_ssl_context()
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json=json_data,
+                    headers=headers,
+                    timeout=timeout,
+                    ssl=ssl_context,
+                ) as response:
+                    if response.status != 200:
+                        response.raise_for_status()
+                    result: Dict[str, Any] = await response.json()
+                    return result
+        except Exception as e:
+            logger.error(f"Request to {url} failed: {e}")
+            return {}
 
-        Args:
-            endpoint: API endpoint
-            data: Request data for POST requests
-            method: HTTP method
-
-        Returns:
-            Response data
-        """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
-
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-
-        timeout = aiohttp.ClientTimeout(total=self.timeout)
-        connector = aiohttp.TCPConnector(verify_ssl=self.verify_ssl)
-
-        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
-            if method.upper() == "POST":
-                async with session.post(url, headers=headers, json=data) as response:
-                    response.raise_for_status()
-                    return await response.json()
-            else:
-                async with session.get(url, headers=headers) as response:
-                    response.raise_for_status()
-                    return await response.json()
+    def get_max_batch_size(self) -> int:
+        """Get maximum batch size for the provider."""
+        return 100
 
     async def generate_embeddings(
-        self, texts: List[str], model: Optional[str] = None, batch_size: Optional[int] = None, **kwargs
+        self, texts: List[str], model: Optional[str] = None, batch_size: Optional[int] = None, **kwargs: Any
     ) -> EmbeddingResult:
         """Generate embeddings using LMStudio.
 
@@ -84,15 +94,16 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
         Returns:
             EmbeddingResult with embeddings and metadata
         """
-        self._validate_inputs(texts)
+        if not texts:
+            raise ValueError("No texts provided for embedding")
 
         if model is None:
             model = await self._get_available_model()
 
         if batch_size is None:
-            batch_size = min(self.get_max_batch_size(), 100)
+            batch_size = self.get_max_batch_size()
 
-        all_embeddings = []
+        all_embeddings: List[List[float]] = []
 
         # Process in batches
         for i in range(0, len(texts), batch_size):
@@ -118,10 +129,12 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
                     except Exception as e2:
                         logger.error(f"Failed to generate individual embedding: {e2}")
                         # Add mock embedding for failed text
-                        mock_embedding = self._generate_mock_embeddings([text], 1536)[0]
+                        model_info = self.KNOWN_MODELS.get(model, self.KNOWN_MODELS["default"])
+                        dimensions = cast(int, model_info["dimensions"])
+                        mock_embedding = self._generate_mock_embeddings([text], dimensions)[0]
                         all_embeddings.append(mock_embedding)
 
-        dimensions = len(all_embeddings[0]) if all_embeddings else 1536
+        dimensions = cast(int, self.KNOWN_MODELS.get(model, self.KNOWN_MODELS["default"])["dimensions"])
 
         return EmbeddingResult(
             embeddings=all_embeddings,
@@ -136,186 +149,98 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
         )
 
     async def _generate_batch_embeddings(self, texts: List[str], model: str) -> List[List[float]]:
-        """Generate embeddings for multiple texts in a single request.
-
-        Args:
-            texts: List of texts to embed
-            model: Model to use
-
-        Returns:
-            List of embedding vectors
-        """
+        """Generate embeddings for multiple texts in a single request."""
         data = {"input": texts, "model": model}
 
         try:
-            response = await self._make_request("/v1/embeddings", data, "POST")
+            response = await self._make_request("/v1/embeddings", data)
 
             if "data" in response:
-                return [item["embedding"] for item in response["data"]]
-            else:
-                raise ValueError("Unexpected response format")
+                return [[float(x) for x in item["embedding"]] for item in response["data"]]
+            raise ValueError("Unexpected response format")
 
         except Exception as e:
             logger.error(f"Batch embedding request failed: {e}")
             raise
 
     async def _generate_single_embedding(self, text: str, model: str) -> List[float]:
-        """Generate embedding for a single text.
-
-        Args:
-            text: Text to embed
-            model: Model to use
-
-        Returns:
-            Embedding vector
-        """
-        data = {"input": text, "model": model}
-
-        response = await self._make_request("/v1/embeddings", data, "POST")
-
-        if "data" in response and len(response["data"]) > 0:
-            return response["data"][0]["embedding"]
-        else:
-            raise ValueError("Unexpected response format")
+        """Generate embedding for a single text."""
+        try:
+            response = await self._make_request("/api/embeddings", {"text": text, "model": model})
+            if response and "embedding" in response:
+                embedding_data = response["embedding"]
+                if isinstance(embedding_data, list):
+                    return [float(x) for x in embedding_data]
+            raise ValueError("Invalid response format")
+        except Exception as e:
+            logger.error(f"Failed to generate embedding: {e}")
+            model_info = self.KNOWN_MODELS.get(self.model_name, self.KNOWN_MODELS["default"])
+            dimensions = cast(int, model_info["dimensions"])
+            return self._generate_mock_embeddings([text], dimensions)[0]
 
     async def _get_available_model(self) -> str:
-        """Get an available model from LMStudio.
-
-        Returns:
-            Model name
-        """
-        if self._models_cache is None:
+        """Get an available model from LMStudio."""
+        if not self._models_cache:
             try:
-                response = await self._make_request("/v1/models")
-                if "data" in response:
-                    self._models_cache = [model["id"] for model in response["data"]]
-                else:
-                    self._models_cache = []
+                response = await self._make_request("/api/models/available")
+                models = response.get("models", [])
+                if isinstance(models, list):
+                    self._models_cache = [str(m) for m in models if m]  # Filter out empty names
             except Exception as e:
-                logger.error(f"Failed to fetch models from LMStudio: {e}")
-                self._models_cache = []
+                logger.error(f"Failed to get models: {e}")
+                return str(self.model_name)
+        
+        if not self._models_cache or len(self._models_cache) == 0:
+            return str(self.model_name)
+            
+        return str(self._models_cache[0])
 
-        if self._models_cache:
-            default = self.get_default_model()
-            if default and default in self._models_cache:
-                return default
-            return self._models_cache[0]
-
-        # If no models available, return a default name
-        return self.get_default_model() or "embedding-model"
+    def _get_model_name(self, model_id: str) -> str:
+        """Get canonical model name."""
+        return model_id.split(":")[0]
 
     async def get_model_info(self, model: str) -> EmbeddingModelInfo:
-        """Get information about an LMStudio model.
-
-        Args:
-            model: Model name
-
-        Returns:
-            EmbeddingModelInfo with model details
-        """
+        """Get information about a LMStudio model."""
         if model in self._model_info_cache:
             return self._model_info_cache[model]
 
-        try:
-            # Try to get model info from LMStudio
-            response = await self._make_request("/v1/models")
-
-            if "data" in response:
-                for model_data in response["data"]:
-                    if model_data["id"] == model:
-                        # Extract what info we can
-                        info = EmbeddingModelInfo(
-                            model_name=model,
-                            dimensions=1536,  # Default, will be updated after first embedding
-                            max_input_tokens=8192,  # Conservative default
-                            supports_batch=True,
-                            provider="lmstudio",
-                            description=f"LMStudio model: {model}",
-                        )
-
-                        self._model_info_cache[model] = info
-                        return info
-
-            # If model not found in list, create basic info
+        # Check if it's a known model
+        if model in self.KNOWN_MODELS:
+            model_spec = self.KNOWN_MODELS[model]
             info = EmbeddingModelInfo(
                 model_name=model,
-                dimensions=1536,  # Default
-                max_input_tokens=8192,  # Conservative default
+                dimensions=cast(int, model_spec["dimensions"]),
+                max_input_tokens=cast(int, model_spec["max_input_tokens"]),
+                cost_per_token=cast(float, model_spec.get("cost_per_token", 0.0)),
                 supports_batch=True,
                 provider="lmstudio",
-                description=f"LMStudio model: {model}",
+                description=str(model_spec.get("description", f"LMStudio model: {model}"))
             )
-
             self._model_info_cache[model] = info
             return info
 
-        except Exception as e:
-            logger.error(f"Failed to get model info for {model}: {e}")
-
-            # Return basic info
-            info = EmbeddingModelInfo(
-                model_name=model,
-                dimensions=1536,
-                max_input_tokens=8192,
-                supports_batch=True,
-                provider="lmstudio",
-                description=f"LMStudio model: {model} (info unavailable)",
-            )
-
-            return info
+        # For unknown models, use default values
+        info = EmbeddingModelInfo(
+            model_name=model,
+            dimensions=768,  # Default
+            max_input_tokens=8192,  # Default
+            cost_per_token=0.0,
+            supports_batch=True,
+            provider="lmstudio",
+            description=f"LMStudio model: {model}"
+        )
+        self._model_info_cache[model] = info
+        return info
 
     def list_models(self) -> List[str]:
-        """List available LMStudio models.
-
-        Returns:
-            List of model names
-        """
-        if self._models_cache is not None:
-            return self._models_cache.copy()
-
-        # Return empty list if not cached yet
-        return []
+        """List available models for this provider."""
+        return list(self.KNOWN_MODELS.keys())
 
     async def health_check(self) -> bool:
-        """Check if LMStudio server is accessible.
-
-        Returns:
-            True if server is accessible, False otherwise
-        """
+        """Check if the provider is healthy and accessible."""
         try:
             response = await self._make_request("/v1/models")
             return "data" in response
         except Exception as e:
-            logger.error(f"LMStudio health check failed: {e}")
+            logger.error(f"Health check failed: {e}")
             return False
-
-    def get_default_model(self) -> str:
-        """Get the default LMStudio embedding model.
-
-        Returns:
-            Default model name
-        """
-        return self.config.get("default_model", "")
-
-    def get_max_batch_size(self) -> int:
-        """Get the maximum batch size for LMStudio.
-
-        Returns:
-            Maximum batch size
-        """
-        return self.config.get("max_batch_size", 100)
-
-    def get_server_info(self) -> Dict[str, Any]:
-        """Get LMStudio server information.
-
-        Returns:
-            Dictionary with server info
-        """
-        return {
-            "base_url": self.base_url,
-            "has_api_key": bool(self.api_key),
-            "timeout": self.timeout,
-            "verify_ssl": self.verify_ssl,
-            "models_cached": self._models_cache is not None,
-            "cached_models_count": len(self._models_cache) if self._models_cache else 0,
-        }

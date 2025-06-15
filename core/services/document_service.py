@@ -11,31 +11,50 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from math import ceil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Type, Union, IO, Callable, TypeVar, cast, Iterator
+from types import ModuleType
+
+# Type variables for generic types
+T = TypeVar('T')
 
 try:
     import pypdf
+    PypdfModule = Type[ModuleType]
 except ImportError:
-    pypdf = None
+    pypdf = None  # type: ignore
+    PypdfModule = Type[Any]  # type: ignore
 
 try:
     from pptx import Presentation
+    PresentationCallable = Type[Callable[[Union[str, IO[bytes], None]], Any]]
 except ImportError:
-    Presentation = None
+    Presentation = None  # type: ignore
+    PresentationCallable = Type[Any]  # type: ignore
 
 try:
     from langchain_experimental.text_splitter import SemanticChunker
     from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
+
+    SemanticChunkerType = Type[SemanticChunker]
+    OpenAIEmbeddingsType = Type[OpenAIEmbeddings]
+    AzureOpenAIEmbeddingsType = Type[AzureOpenAIEmbeddings]
 except ImportError:
-    SemanticChunker = None
-    OpenAIEmbeddings = None
-    AzureOpenAIEmbeddings = None
+    SemanticChunker = None  # type: ignore
+    OpenAIEmbeddings = None  # type: ignore
+    AzureOpenAIEmbeddings = None  # type: ignore
+    SemanticChunkerType = Type[Any]  # type: ignore
+    OpenAIEmbeddingsType = Type[Any]  # type: ignore
+    AzureOpenAIEmbeddingsType = Type[Any]  # type: ignore
 
 try:
-    from tqdm import tqdm
-except ImportError:
+    from tqdm.auto import tqdm as tqdm_auto
 
-    def tqdm(iterable, *args, **kwargs):
+    def tqdm(iterable: Iterator[T], *args: Any, **kwargs: Any) -> Iterator[T]:
+        """Wrapper around tqdm to handle both CLI and notebook contexts."""
+        return cast(Iterator[T], tqdm_auto(iterable, *args, **kwargs))
+except ImportError:
+    def tqdm(iterable: Iterator[T], *args: Any, **kwargs: Any) -> Iterator[T]:
+        """Fallback implementation when tqdm is not available."""
         return iterable
 
 
@@ -213,8 +232,11 @@ class DocumentService:
         all_chunks = []
         futures = []
 
-        with tqdm(total=len(available_files), desc="Processing files", unit="file") as pbar:
-            with ThreadPoolExecutor(max_workers=self.config.embed_workers) as executor:
+        # Use a simple progress counter instead of tqdm
+        total_files = len(available_files)
+        processed_files = 0
+        
+        with ThreadPoolExecutor(max_workers=self.config.embed_workers) as executor:
                 for file_path in available_files:
                     future = executor.submit(self._process_single_file_with_coordination, file_path)
                     futures.append(future)
@@ -227,11 +249,11 @@ class DocumentService:
                         chunks = future.result()
                         if chunks:  # Only extend if chunks were successfully processed
                             all_chunks.extend(chunks)
-                        pbar.set_postfix({"total_chunks": len(all_chunks)})
-                        pbar.update(1)
+                        processed_files += 1
+                        logger.info(f"Processed {processed_files}/{total_files} files, total chunks: {len(all_chunks)}")
                     except Exception as e:
                         logger.error(f"Error processing file: {e}")
-                        pbar.update(1)
+                        processed_files += 1
 
         self.stats.total_chunks = len(all_chunks)
         return all_chunks
@@ -330,7 +352,7 @@ class DocumentService:
         if self.config.doctype == "json":
             with open(file_path, "r") as f:
                 data = json.load(f)
-            return data.get("text", str(data))
+            return str(data.get("text", json.dumps(data)))  # Ensure string return
 
         elif self.config.doctype == "pdf":
             text = ""
@@ -352,7 +374,7 @@ class DocumentService:
 
     def _extract_text_from_pptx(self, file_path: Path) -> str:
         """Extract text from PowerPoint file."""
-        prs = Presentation(file_path)
+        prs = Presentation(str(file_path))  # Convert Path to str
         text_parts = []
 
         for slide in prs.slides:

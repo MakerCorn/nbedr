@@ -2,29 +2,37 @@
 OpenAI embedding provider implementation.
 """
 
-# mypy: disable-error-code="assignment,misc,arg-type,no-any-return,has-type"
-
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
-
-from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, Type, Union, cast
 
 logger = logging.getLogger(__name__)
 
 try:
+    import openai
     from openai import AsyncOpenAI, OpenAI
+    from openai.types.create_embedding_response import CreateEmbeddingResponse
+    from openai.types.embedding import Embedding
+    OPENAI_AVAILABLE = True
 except ImportError:
-    OpenAI = None
-    AsyncOpenAI = None
+    logger.warning("OpenAI library not available, using mock implementation")
+    OPENAI_AVAILABLE = False
+    # Import typing.Any for type annotations
+    from typing import Any
+    # Use Any for type annotations
+    OpenAI = Any  # type: ignore[misc, assignment]
+    AsyncOpenAI = Any  # type: ignore[misc, assignment]
+    CreateEmbeddingResponse = Any  # type: ignore[misc, assignment]
+    Embedding = Any  # type: ignore[misc, assignment]
+
+from .base_embedding_provider import BaseEmbeddingProvider, EmbeddingModelInfo, EmbeddingResult
 
 
 class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
     """OpenAI embedding provider."""
 
-    # OpenAI embedding models with their specifications
-    MODELS = {
+    KNOWN_MODELS = {
         "text-embedding-3-large": {
             "dimensions": 3072,
             "max_input_tokens": 8192,
@@ -45,7 +53,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         },
     }
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize OpenAI embedding provider.
 
         Args:
@@ -69,7 +77,11 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         self.max_retries = config.get("max_retries", 3)
 
         # Initialize clients
-        client_kwargs = {"api_key": self.api_key, "timeout": self.timeout, "max_retries": self.max_retries}
+        client_kwargs = {
+            "api_key": self.api_key,
+            "timeout": self.timeout,
+            "max_retries": self.max_retries,
+        }
 
         if self.organization:
             client_kwargs["organization"] = self.organization
@@ -77,70 +89,62 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         if self.base_url:
             client_kwargs["base_url"] = self.base_url
 
-        if OpenAI is None:
-            logger.warning("OpenAI library not available, using mock implementation")
-            self.client = None
-            self.async_client = None
-        else:
-            self.client = OpenAI(**client_kwargs)
-            self.async_client = AsyncOpenAI(**client_kwargs)
+        self.client: Optional[OpenAI] = None
+        self.async_client: Optional[AsyncOpenAI] = None
+
+        if OPENAI_AVAILABLE:
+            try:
+                self.client = OpenAI(**client_kwargs)
+                self.async_client = AsyncOpenAI(**client_kwargs)
+            except Exception as e:
+                logger.error(f"Failed to initialize OpenAI client: {e}")
+                self.client = None
+                self.async_client = None
 
     async def generate_embeddings(
-        self,
+        self, 
         texts: List[str],
         model: Optional[str] = None,
         batch_size: Optional[int] = None,
         dimensions: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> EmbeddingResult:
-        """Generate embeddings using OpenAI API.
-
-        Args:
-            texts: List of texts to embed
-            model: Model to use (defaults to config default)
-            batch_size: Batch size for processing
-            dimensions: Number of dimensions (for models that support it)
-            **kwargs: Additional arguments
-
-        Returns:
-            EmbeddingResult with embeddings and metadata
-        """
-        self._validate_inputs(texts)
+        """Generate embeddings using OpenAI API."""
+        if not texts:
+            raise ValueError("No texts provided for embedding")
 
         if model is None:
-            model = self.get_default_model() or "text-embedding-3-small"
+            model = self.get_default_model()
 
         if batch_size is None:
-            batch_size = min(self.get_max_batch_size(), 2048)
+            batch_size = self.get_max_batch_size()
 
         if not self.async_client:
             logger.warning("OpenAI client not available, returning mock embeddings")
-            mock_embeddings = self._generate_mock_embeddings(texts, self.MODELS.get(model, {}).get("dimensions", 1536))
+            mock_dims = cast(int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536))
+            mock_embeddings = self._generate_mock_embeddings(texts, mock_dims)
             return EmbeddingResult(
                 embeddings=mock_embeddings,
                 model=model,
-                dimensions=len(mock_embeddings[0]) if mock_embeddings else 1536,
+                dimensions=mock_dims,
                 token_count=sum(len(text.split()) for text in texts),
+                usage_stats={"provider": "openai", "mock": True}
             )
 
-        all_embeddings = []
+        all_embeddings: List[List[float]] = []
         total_tokens = 0
 
         # Process in batches
         for i in range(0, len(texts), batch_size):
             batch_texts = texts[i : i + batch_size]
-
-            # Estimate tokens for rate limiting
-            estimated_tokens = sum(len(text.split()) * 1.3 for text in batch_texts)  # Rough estimation
+            estimated_tokens = sum(len(text.split()) * 1.3 for text in batch_texts)
 
             try:
                 # Apply rate limiting
                 await self._apply_rate_limiting(int(estimated_tokens))
 
                 # Prepare request parameters
-                request_params = {"input": batch_texts, "model": model}
-
-                # Add dimensions parameter for supported models
+                request_params: Dict[str, Any] = {"input": batch_texts, "model": model}
                 if dimensions and model in ["text-embedding-3-large", "text-embedding-3-small"]:
                     request_params["dimensions"] = dimensions
 
@@ -148,121 +152,99 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 response = await self.async_client.embeddings.create(**request_params)
                 response_time = time.time() - start_time
 
-                # Extract embeddings and usage info
+                # Extract embeddings
                 batch_embeddings = [data.embedding for data in response.data]
                 all_embeddings.extend(batch_embeddings)
 
-                actual_tokens = 0
+                # Extract token usage
                 if hasattr(response, "usage") and response.usage:
-                    actual_tokens = response.usage.total_tokens
-                    total_tokens += actual_tokens * len(batch_texts)
-
-                # Record response for rate limiting
-                self._record_response(response_time, actual_tokens or int(estimated_tokens))
+                    tokens_used = response.usage.total_tokens
+                    total_tokens += tokens_used
+                    self._record_response(response_time, tokens_used)
+                else:
+                    self._record_response(response_time, int(estimated_tokens))
 
                 logger.debug(
                     f"Generated embeddings for batch {i // batch_size + 1}/{(len(texts) - 1) // batch_size + 1}"
                 )
 
             except Exception as e:
-                # Record error for rate limiting
-                if "rate_limit" in str(e).lower():
-                    self._record_error("rate_limit")
-                elif "server" in str(e).lower():
-                    self._record_error("server_error")
-
+                error_type = "rate_limit" if "rate_limit" in str(e).lower() else "server_error"
+                self._record_error(error_type)
                 logger.error(f"Failed to generate embeddings for batch {i // batch_size + 1}: {e}")
+                
                 # Add mock embeddings for failed batch
-                mock_batch = self._generate_mock_embeddings(
-                    batch_texts, self.MODELS.get(model, {}).get("dimensions", 1536)
-                )
+                mock_dims = cast(int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536))
+                mock_batch = self._generate_mock_embeddings(batch_texts, mock_dims)
                 all_embeddings.extend(mock_batch)
+
+        dimensions_used = len(all_embeddings[0]) if all_embeddings else cast(
+            int, self.KNOWN_MODELS.get(model, {}).get("dimensions", 1536)
+        )
 
         return EmbeddingResult(
             embeddings=all_embeddings,
             model=model,
-            dimensions=len(all_embeddings[0]) if all_embeddings else self.MODELS.get(model, {}).get("dimensions", 1536),
+            dimensions=dimensions_used,
             token_count=total_tokens if total_tokens > 0 else None,
-            usage_stats={"provider": "openai", "batches_processed": (len(texts) - 1) // batch_size + 1},
+            usage_stats={
+                "provider": "openai",
+                "base_url": self.base_url,
+                "batches_processed": (len(texts) - 1) // batch_size + 1,
+            },
         )
 
     async def get_model_info(self, model: str) -> EmbeddingModelInfo:
-        """Get information about an OpenAI embedding model.
-
-        Args:
-            model: Model name
-
-        Returns:
-            EmbeddingModelInfo with model details
-        """
-        if model not in self.MODELS:
+        """Get information about an OpenAI embedding model."""
+        if model not in self.KNOWN_MODELS:
             raise ValueError(f"Unknown OpenAI embedding model: {model}")
 
-        model_spec = self.MODELS[model]
+        model_spec = self.KNOWN_MODELS[model]
 
         return EmbeddingModelInfo(
             model_name=model,
-            dimensions=model_spec["dimensions"],
-            max_input_tokens=model_spec["max_input_tokens"],
-            cost_per_token=model_spec["cost_per_token"],
+            dimensions=cast(int, model_spec["dimensions"]),
+            max_input_tokens=cast(int, model_spec["max_input_tokens"]),
+            cost_per_token=cast(float, model_spec["cost_per_token"]),
             supports_batch=True,
             provider="openai",
-            description=model_spec["description"],
+            description=str(model_spec["description"]),
         )
 
     def list_models(self) -> List[str]:
-        """List available OpenAI embedding models.
-
-        Returns:
-            List of model names
-        """
-        return list(self.MODELS.keys())
+        """List available OpenAI embedding models."""
+        return list(self.KNOWN_MODELS.keys())
 
     async def health_check(self) -> bool:
-        """Check if OpenAI API is accessible.
-
-        Returns:
-            True if API is accessible, False otherwise
-        """
+        """Check if OpenAI API is accessible."""
         if not self.async_client:
             return False
 
         try:
-            # Try a simple embedding request
-            response = await self.async_client.embeddings.create(input=["test"], model="text-embedding-3-small")
-            return len(response.data) > 0
+            response = await self.async_client.embeddings.create(
+                input=["test"],
+                model="text-embedding-3-small"
+            )
+            return bool(response.data)
         except Exception as e:
             logger.error(f"OpenAI health check failed: {e}")
             return False
 
     def get_default_model(self) -> str:
-        """Get the default OpenAI embedding model.
-
-        Returns:
-            Default model name
-        """
-        return self.config.get("default_model", "text-embedding-3-small")
+        """Get the default OpenAI embedding model."""
+        return str(self.config.get("default_model", "text-embedding-3-small"))
 
     def get_max_batch_size(self) -> int:
-        """Get the maximum batch size for OpenAI API.
+        """Get the maximum batch size for OpenAI API."""
+        return int(self.config.get("max_batch_size", 2048))
 
-        Returns:
-            Maximum batch size
-        """
-        return self.config.get("max_batch_size", 2048)
-
-    def estimate_cost(self, token_count: int, model: str) -> float:
-        """Estimate the cost for embedding generation.
-
-        Args:
-            token_count: Number of tokens to embed
-            model: Model to use
-
-        Returns:
-            Estimated cost in USD
-        """
-        if model not in self.MODELS:
+    async def _estimate_cost(self, token_count: int, model: Optional[str] = None) -> float:
+        """Estimate cost for the operation."""
+        effective_model = model or self.get_default_model()
+        
+        if effective_model not in self.KNOWN_MODELS:
             return 0.0
-
-        cost_per_token = self.MODELS[model]["cost_per_token"]
-        return token_count * cost_per_token
+        
+        cost_per_token_str = str(self.KNOWN_MODELS[effective_model]["cost_per_token"])
+        cost_per_token = float(cost_per_token_str)
+        return float(token_count) * cost_per_token

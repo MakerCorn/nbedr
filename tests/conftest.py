@@ -89,7 +89,8 @@ def sample_config_with_env_vars(monkeypatch):
     monkeypatch.setenv("PINECONE_API_KEY", "test_pinecone_key")
     monkeypatch.setenv("PINECONE_ENVIRONMENT", "test-env")
 
-    return EmbeddingConfig.from_env()
+    config = EmbeddingConfig.from_env()
+    return config
 
 
 @pytest.fixture
@@ -389,7 +390,8 @@ def create_test_config(**overrides):
         "rate_limit_enabled": False,
     }
     defaults.update(overrides)
-    return EmbeddingConfig(**defaults)
+    config_dict = {k: v for k, v in defaults.items()}
+    return EmbeddingConfig(**config_dict)
 
 
 def create_test_chunks(count=3, with_embeddings=False):

@@ -4,13 +4,17 @@ OpenAI and Azure OpenAI client management for embeddings.
 
 import logging
 from os import environ
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Type, TypeVar, cast
+
+OpenAIClientType = TypeVar('OpenAIClientType')
 
 try:
-    from openai import AzureOpenAI, OpenAI
+    from openai import AzureOpenAI, OpenAI, AsyncAzureOpenAI, AsyncOpenAI
 except ImportError:
-    AzureOpenAI = None
-    OpenAI = None
+    AzureOpenAI = None  # type: ignore
+    OpenAI = None  # type: ignore
+    AsyncAzureOpenAI = None  # type: ignore
+    AsyncOpenAI = None  # type: ignore
 
 from ..utils.env_config import read_env_config, set_env
 
@@ -82,7 +86,13 @@ def build_langchain_embeddings(**kwargs):
         return MockEmbeddings()
 
 
-class EmbeddingClient:
+class BaseEmbeddingsClient:
+    """Base class for OpenAI embeddings."""
+    def __init__(self) -> None:
+        self.client: Optional[Union[AzureOpenAI, OpenAI]] = None
+
+
+class EmbeddingClient(BaseEmbeddingsClient):
     """Client for generating embeddings using OpenAI or Azure OpenAI."""
 
     def __init__(
@@ -100,6 +110,7 @@ class EmbeddingClient:
             azure_enabled: Whether to use Azure OpenAI
             **kwargs: Additional client configuration
         """
+        super().__init__()
         self.model = model
         self.azure_enabled = azure_enabled
 

@@ -144,12 +144,12 @@ class GoogleVertexEmbeddingProvider(BaseEmbeddingProvider):
 
         if not self.initialized:
             logger.warning("Vertex AI not available, returning mock embeddings")
-            dimensions = int(self.MODELS.get(model, {}).get("dimensions", 768))
-            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)  # type: ignore[arg-type]
+            dimensions = int(self.MODELS.get(model, {}).get("dimensions", 768))  # type: ignore
+            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)
             return EmbeddingResult(
                 embeddings=mock_embeddings,
                 model=model,
-                dimensions=len(mock_embeddings[0]) if mock_embeddings else 768,
+                dimensions=dimensions,  # Use the cast dimensions value
                 token_count=sum(len(text.split()) for text in texts),
             )
 
@@ -158,12 +158,14 @@ class GoogleVertexEmbeddingProvider(BaseEmbeddingProvider):
         except Exception as e:
             logger.error(f"Failed to load model {model}: {e}")
             # Fall back to mock embeddings
-            dimensions = int(self.MODELS.get(model, {}).get("dimensions", 768))
-            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)  # type: ignore[arg-type]
+            model_info = self.MODELS.get(model, {})
+            # Ensure we're working with integers
+            dimensions = int(str(model_info.get("dimensions", 768)))
+            mock_embeddings = self._generate_mock_embeddings(texts, dimensions)
             return EmbeddingResult(
                 embeddings=mock_embeddings,
                 model=model,
-                dimensions=len(mock_embeddings[0]) if mock_embeddings else 768,
+                dimensions=dimensions,
                 token_count=sum(len(text.split()) for text in texts),
             )
 

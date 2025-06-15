@@ -1,5 +1,6 @@
 import contextlib
 import os
+from typing import Optional, Dict, Any
 
 # List of environment variables prefixes that are allowed to be used for configuration.
 env_prefix_whitelist = ["OPENAI", "AZURE_OPENAI"]
@@ -24,21 +25,22 @@ def read_env_config(use_prefix: str, env=os.environ) -> dict:
     return config
 
 
-def read_env_config_prefixed(use_prefix: str, config: dict, env=os.environ) -> None:
+def read_env_config_prefixed(use_prefix: Optional[str], config: dict, env=os.environ) -> None:
     """Reads whitelisted environment variables prefixed with use_prefix and adds them to the dictionary
     with use_prefix stripped.
 
     Args:
-        use_prefix (str): The prefix to filter environment variables.
+        use_prefix (str | None): The prefix to filter environment variables.
         config (dict): The dictionary to store the filtered environment variables.
         env (dict, optional): The environment variables dictionary. Defaults to os.environ.
     """
-    use_prefix = format_prefix(use_prefix)
+    use_prefix_str = "" if use_prefix is None else use_prefix
+    use_prefix_formatted = format_prefix(use_prefix_str)
     for key in env:
         for env_prefix in env_prefix_whitelist:
-            key_prefix = f"{use_prefix}{format_prefix(env_prefix)}"
+            key_prefix = f"{use_prefix_formatted}{format_prefix(env_prefix)}"
             if key.startswith(key_prefix):
-                striped_key = key.removeprefix(use_prefix)
+                striped_key = key.removeprefix(use_prefix_formatted)
                 config[striped_key] = env[key]
 
 
@@ -51,10 +53,10 @@ def format_prefix(prefix: str) -> str:
     Returns:
         str: The formatted prefix.
     """
-    if prefix and len(prefix) > 0 and not prefix.endswith("_"):
-        prefix = f"{prefix}_"
     if not prefix:
-        prefix = ""
+        return ""
+    if len(prefix) > 0 and not prefix.endswith("_"):
+        prefix = f"{prefix}_"
     return prefix
 
 
