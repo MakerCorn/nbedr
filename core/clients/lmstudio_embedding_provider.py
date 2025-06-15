@@ -103,7 +103,9 @@ class LMStudioEmbeddingProvider(BaseEmbeddingProvider):
                 batch_embeddings = await self._generate_batch_embeddings(batch_texts, model)
                 all_embeddings.extend(batch_embeddings)
 
-                logger.debug(f"Generated embeddings for batch {i//batch_size + 1}/{(len(texts) - 1)//batch_size + 1}")
+                logger.debug(
+                    f"Generated embeddings for batch {i // batch_size + 1}/{(len(texts) - 1) // batch_size + 1}"
+                )
 
             except Exception as e:
                 logger.warning(f"Batch processing failed, falling back to individual processing: {e}")

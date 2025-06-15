@@ -155,12 +155,14 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 actual_tokens = 0
                 if hasattr(response, "usage") and response.usage:
                     actual_tokens = response.usage.total_tokens
-                    total_tokens += actual_tokens
+                    total_tokens += actual_tokens * len(batch_texts)
 
                 # Record response for rate limiting
                 self._record_response(response_time, actual_tokens or int(estimated_tokens))
 
-                logger.debug(f"Generated embeddings for batch {i//batch_size + 1}/{(len(texts) - 1)//batch_size + 1}")
+                logger.debug(
+                    f"Generated embeddings for batch {i // batch_size + 1}/{(len(texts) - 1) // batch_size + 1}"
+                )
 
             except Exception as e:
                 # Record error for rate limiting
@@ -169,7 +171,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
                 elif "server" in str(e).lower():
                     self._record_error("server_error")
 
-                logger.error(f"Failed to generate embeddings for batch {i//batch_size + 1}: {e}")
+                logger.error(f"Failed to generate embeddings for batch {i // batch_size + 1}: {e}")
                 # Add mock embeddings for failed batch
                 mock_batch = self._generate_mock_embeddings(
                     batch_texts, self.MODELS.get(model, {}).get("dimensions", 1536)

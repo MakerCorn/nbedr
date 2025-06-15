@@ -108,8 +108,8 @@ def sample_document_chunks():
     chunks = []
     for i in range(5):
         chunk = DocumentChunk.create(
-            content=f"This is test chunk number {i+1} with some content.",
-            source=f"/path/to/test/document_{i+1}.txt",
+            content=f"This is test chunk number {i + 1} with some content.",
+            source=f"/path/to/test/document_{i + 1}.txt",
             metadata={"type": "test", "chunk_index": i},
         )
         chunks.append(chunk)
@@ -397,7 +397,7 @@ def create_test_chunks(count=3, with_embeddings=False):
     chunks = []
     for i in range(count):
         chunk = DocumentChunk.create(
-            content=f"Test chunk {i+1} content", source=f"/test/doc_{i+1}.txt", metadata={"index": i}
+            content=f"Test chunk {i + 1} content", source=f"/test/doc_{i + 1}.txt", metadata={"index": i}
         )
         if with_embeddings:
             chunk.embedding = [0.1 * (i + 1), 0.2 * (i + 1), 0.3 * (i + 1)] * 512

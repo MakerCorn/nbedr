@@ -107,7 +107,7 @@ class DocumentService:
                 processed_batch = self._process_embedding_batch(batch)
                 embedded_chunks.extend(processed_batch.chunks)
                 batch.mark_completed()
-                logger.info(f"Processed batch {i//batch_size + 1}/{ceil(len(chunks)/batch_size)}")
+                logger.info(f"Processed batch {i // batch_size + 1}/{ceil(len(chunks) / batch_size)}")
             except Exception as e:
                 logger.error(f"Failed to process embedding batch: {e}")
                 batch.mark_failed(str(e))

@@ -137,10 +137,10 @@ class EmbeddingClient:
                 batch_embeddings = [data.embedding for data in response.data]
                 embeddings.extend(batch_embeddings)
 
-                logger.debug(f"Generated embeddings for batch {i//batch_size + 1}")
+                logger.debug(f"Generated embeddings for batch {i // batch_size + 1}")
 
             except Exception as e:
-                logger.error(f"Failed to generate embeddings for batch {i//batch_size + 1}: {e}")
+                logger.error(f"Failed to generate embeddings for batch {i // batch_size + 1}: {e}")
                 # Add mock embeddings for failed batch
                 mock_batch = self._generate_mock_embeddings(batch_texts)
                 embeddings.extend(mock_batch)
