@@ -504,14 +504,8 @@ class TestEnvConfig:
     def test_load_env_file_when_available(self):
         """Test that load_env_file function exists and is callable."""
         # Test that the function exists (even if it's a no-op fallback)
-        try:
-            from core.utils.env_config import load_env_file
-
-            # Just check it's callable, don't actually call it
-            assert callable(load_env_file)
-        except ImportError:
-            # If load_env_file doesn't exist, that's fine for this test
-            pass
+        # load_env_file is already imported at module level
+        assert callable(load_env_file)
 
 
 class TestIdentityUtils:
