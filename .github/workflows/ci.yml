@@ -333,12 +333,21 @@ jobs:
       run: |
         pip install -e .[all]
 
-    - name: Run Trivy vulnerability scanner
+    - name: Run Trivy filesystem scanner
       uses: aquasecurity/trivy-action@master
       with:
-        scan-type: 'fs,config'
+        scan-type: 'fs'
         format: 'sarif'
-        output: 'trivy-results.sarif'
+        output: 'trivy-fs-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        timeout: '10m'
+
+    - name: Run Trivy configuration scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        format: 'sarif'
+        output: 'trivy-config-results.sarif'
         severity: 'CRITICAL,HIGH'
         timeout: '10m'
 
@@ -352,14 +361,22 @@ jobs:
         severity: 'CRITICAL,HIGH'
         timeout: '10m'
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+    - name: Upload Trivy filesystem scan results
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: 'trivy-fs-results.sarif'
+        category: filesystem
+
+    - name: Upload Trivy configuration scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-config-results.sarif'
+        category: configuration
 
     - name: Upload container scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: needs.build-docker.result == 'success'
       with:
         sarif_file: 'trivy-container-results.sarif'
