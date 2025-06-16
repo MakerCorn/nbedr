@@ -12,6 +12,17 @@ spec:
         cloud.google.com/gke-nodepool: nbedr-pool
       containers:
       - name: nbedr
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         env:
         - name: GOOGLE_CLOUD_PROJECT
           valueFrom:
@@ -44,6 +55,14 @@ spec:
         - name: gcp-credentials
           mountPath: /var/secrets/google
           readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: nbedr-data
+          mountPath: /app/data
+        - name: nbedr-output
+          mountPath: /app/output
+        - name: nbedr-logs
+          mountPath: /app/logs
         resources:
           requests:
             memory: "1Gi"
@@ -58,3 +77,11 @@ spec:
           items:
           - key: gcp-service-account.json
             path: gcp-service-account.json
+      - name: tmp-volume
+        emptyDir: {}
+      - name: nbedr-data
+        emptyDir: {}
+      - name: nbedr-output
+        emptyDir: {}
+      - name: nbedr-logs
+        emptyDir: {}

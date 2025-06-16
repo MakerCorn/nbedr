@@ -35,8 +35,19 @@ spec:
         fsGroup: 1000
       containers:
       - name: nbedr
-        image: nbedr:latest
-        imagePullPolicy: Always
+        image: ghcr.io/makercorn/nbedr:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         command:
           - python3
           - nbedr.py
@@ -93,6 +104,8 @@ spec:
         - name: templates-volume
           mountPath: /app/templates
           readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
         livenessProbe:
           exec:
             command:
@@ -132,5 +145,7 @@ spec:
       - name: templates-volume
         configMap:
           name: nbedr-templates
+      - name: tmp-volume
+        emptyDir: {}
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

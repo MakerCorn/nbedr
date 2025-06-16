@@ -1,0 +1,67 @@
+version: 2
+updates:
+  # Enable version updates for Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    target-branch: "develop"
+    reviewers:
+      - "MakerCorn"
+    assignees:
+      - "MakerCorn"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    target-branch: "develop"
+    reviewers:
+      - "MakerCorn"
+    assignees:
+      - "MakerCorn"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "ci"
+      - "dependencies"
+    open-pull-requests-limit: 5
+
+  # Enable version updates for Docker base images
+  - package-ecosystem: "docker"
+    directory: "/deployment/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    target-branch: "develop"
+    reviewers:
+      - "MakerCorn"
+    assignees:
+      - "MakerCorn"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "docker"
+      - "dependencies"
+    open-pull-requests-limit: 3

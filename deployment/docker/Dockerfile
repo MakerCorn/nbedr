@@ -1,5 +1,5 @@
 # Optimized multi-stage build for nBedR
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 # Set build arguments for optional features
 ARG BUILD_DATE
@@ -21,10 +21,10 @@ LABEL org.opencontainers.image.title="nBedR" \
       org.opencontainers.image.vendor="nBedR Team" \
       org.opencontainers.image.licenses="MIT"
 
-# Install system dependencies with aggressive cleanup
+# Install system dependencies with security updates and aggressive cleanup
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     git \
@@ -47,9 +47,9 @@ RUN echo "Validating requirements files..." && \
     ls -la requirements-*.txt && \
     echo "All requirements files present."
 
-# Upgrade pip and install minimal dependencies
+# Upgrade pip and install minimal dependencies with security fixes
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip setuptools>=75.6.0 wheel
 
 # Install minimal dependencies (always required)
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -129,12 +129,12 @@ RUN echo "Cleaning up build artifacts..." && \
     rm -rf /var/lib/apt/lists/*
 
 # Production stage
-FROM python:3.11-slim AS production
+FROM python:3.11-slim-bookworm AS production
 
-# Install runtime dependencies only
+# Install runtime dependencies with security updates
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*

@@ -12,6 +12,26 @@ spec:
         eks.amazonaws.com/nodegroup: nbedr-workers
       containers:
       - name: nbedr
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: nbedr-data
+          mountPath: /app/data
+        - name: nbedr-output
+          mountPath: /app/output
+        - name: nbedr-logs
+          mountPath: /app/logs
         env:
         - name: AWS_REGION
           valueFrom:
@@ -47,3 +67,12 @@ spec:
             cpu: "2000m"
         # Use IAM roles for service accounts instead of access keys
         # Remove AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from env
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: nbedr-data
+        emptyDir: {}
+      - name: nbedr-output
+        emptyDir: {}
+      - name: nbedr-logs
+        emptyDir: {}
