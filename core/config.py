@@ -684,11 +684,11 @@ class EmbeddingConfig:
 
 def get_config(env_file: Optional[str] = None, **overrides) -> EmbeddingConfig:
     """Get validated configuration instance with optional parameter overrides.
-    
+
     Args:
         env_file: Optional path to an environment file
         **overrides: Parameter overrides as keyword arguments
-    
+
     Returns:
         A validated EmbeddingConfig instance
     """
