@@ -309,7 +309,7 @@ class TestMultipleInstanceScenarios:
                     # Check if file is already completed after acquiring lock
                     if coordinator.is_file_completed(file_path):
                         return f"{instance_id} skipped {file_path.name} (already completed)"
-                    
+
                     # Simulate processing time
                     time.sleep(0.1)
                     coordinator.mark_file_completed(file_path)
