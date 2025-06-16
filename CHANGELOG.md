@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Document Coordination Race Condition**: Fixed race condition in `DocumentCoordinator.acquire_file_lock()` method where multiple instances could acquire locks for the same file simultaneously, leading to duplicate processing. The fix uses atomic file creation with exclusive open mode ('x') to ensure only one instance can acquire a lock at a time.
 - **Parallel Build Coordination Directory Isolation**: Updated `temp_coordination_dir` test fixture to respect the `TMPDIR` environment variable set by CI/CD, ensuring each parallel build (OS + Python version combination) uses a unique coordination directory. This prevents cross-contamination between the 4 parallel CI builds running simultaneously.
-- **CI/CD Docker Configuration**: Fixed Docker push permissions by adding repository owner checks, ensuring Docker images are only pushed when running in the main repository. Also fixed Docker stage naming case consistency (`FROM ... AS` instead of `FROM ... as`).
+- **CI/CD Docker Configuration**: Fixed Docker stage naming case consistency (`FROM ... AS` instead of `FROM ... as`). Fixed GitHub Container Registry push permissions by adding explicit `packages: write` permission to the build-docker job, resolving the "installation not allowed to Create organization package" error.
 
 ### Added
 
