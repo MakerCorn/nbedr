@@ -75,7 +75,7 @@ jobs:
 
     - name: Run type checking
       run: |
-        mypy core/ cli/ --ignore-missing-imports || echo "MyPy not available, skipping type check"
+        mypy nbedr/ --ignore-missing-imports || echo "MyPy not available, skipping type check"
 
     - name: Run security checks
       run: |
@@ -88,13 +88,13 @@ jobs:
       env:
         NBEDR_DISABLE_COORDINATION: "true"
       run: |
-        pytest tests/unit/ -v --cov=core --cov=cli --cov-report=xml --cov-report=term-missing --tb=short --timeout=300
+        pytest tests/unit/ -v --cov=nbedr --cov-report=xml --cov-report=term-missing --tb=short --timeout=300
 
     - name: Run integration tests
       env:
         NBEDR_DISABLE_COORDINATION: "true"
       run: |
-        pytest tests/integration/ -v --cov-append --cov=core --cov=cli --cov-report=xml --tb=short --timeout=300
+        pytest tests/integration/ -v --cov-append --cov=nbedr --cov-report=xml --tb=short --timeout=300
 
     - name: Run coordination tests
       env:

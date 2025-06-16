@@ -54,7 +54,7 @@ graph TB
 
 ### Development Environment
 
-- **Python**: 3.9, 3.10, or 3.11
+- **Python**: 3.11 or higher (3.12, 3.13 also supported)
 - **Git**: Latest version
 - **Docker**: For container building (optional)
 - **GitHub CLI**: For release management (optional)
@@ -151,7 +151,7 @@ docker run --rm -e EMBEDDING_PROVIDER=mock nbedr:local nbedr --help
 ### Pipeline Stages
 
 #### 1. **Test Stage**
-- **Matrix Testing**: Python 3.9, 3.10, 3.11
+- **Matrix Testing**: Python 3.11, 3.12, 3.13
 - **Code Quality**: Black, isort, flake8, mypy
 - **Security**: Bandit security scanning
 - **Unit Tests**: Comprehensive test coverage
