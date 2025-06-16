@@ -42,37 +42,87 @@ COPY requirements-documents.txt ./
 COPY requirements-local-llm.txt ./
 COPY requirements-heavy.txt ./
 
-# Install all dependencies in a single layer to minimize space usage
+# Validate requirements files are present
+RUN echo "Validating requirements files..." && \
+    ls -la requirements-*.txt && \
+    echo "All requirements files present."
+
+# Upgrade pip and install minimal dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/tmp/pip-build \
-    pip install --upgrade pip setuptools wheel && \
-    pip install --only-binary=:all: -r requirements-minimal.txt || \
-    pip install -r requirements-minimal.txt && \
-    # Conditionally install optional features
+    pip install --upgrade pip setuptools wheel
+
+# Install minimal dependencies (always required)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    echo "Installing minimal dependencies..." && \
+    echo "Contents of requirements-minimal.txt:" && \
+    cat requirements-minimal.txt && \
+    echo "Starting pip install..." && \
+    pip install --verbose --only-binary=:all: -r requirements-minimal.txt || \
+    (echo "Binary install failed, trying with compilation..." && \
+     pip install --verbose -r requirements-minimal.txt)
+
+# Conditionally install cloud dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
     if [ "$INSTALL_CLOUD" = "true" ]; then \
+        echo "Installing cloud dependencies..." && \
         pip install --only-binary=:all: -r requirements-cloud.txt || \
         pip install -r requirements-cloud.txt; \
-    fi && \
+    else \
+        echo "Skipping cloud dependencies (INSTALL_CLOUD=$INSTALL_CLOUD)"; \
+    fi
+
+# Conditionally install vector store dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
     if [ "$INSTALL_VECTOR_STORES" = "true" ]; then \
+        echo "Installing vector store dependencies..." && \
         pip install --only-binary=:all: -r requirements-vector-stores.txt || \
         pip install -r requirements-vector-stores.txt; \
-    fi && \
+    else \
+        echo "Skipping vector store dependencies (INSTALL_VECTOR_STORES=$INSTALL_VECTOR_STORES)"; \
+    fi
+
+# Conditionally install document processing dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
     if [ "$INSTALL_DOCUMENTS" = "true" ]; then \
+        echo "Installing document processing dependencies..." && \
         pip install --only-binary=:all: -r requirements-documents.txt || \
         pip install -r requirements-documents.txt; \
-    fi && \
+    else \
+        echo "Skipping document processing dependencies (INSTALL_DOCUMENTS=$INSTALL_DOCUMENTS)"; \
+    fi
+
+# Conditionally install local LLM dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
     if [ "$INSTALL_LOCAL_LLM" = "true" ]; then \
+        echo "Installing local LLM dependencies..." && \
         pip install --only-binary=:all: -r requirements-local-llm.txt || \
         pip install -r requirements-local-llm.txt; \
-    fi && \
+    else \
+        echo "Skipping local LLM dependencies (INSTALL_LOCAL_LLM=$INSTALL_LOCAL_LLM)"; \
+    fi
+
+# Conditionally install heavy dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
     if [ "$INSTALL_HEAVY" = "true" ]; then \
+        echo "Installing heavy dependencies..." && \
         pip install --only-binary=:all: -r requirements-heavy.txt || \
         pip install -r requirements-heavy.txt; \
-    fi && \
-    # Clean up build artifacts and caches to save space
-    pip cache purge && \
+    else \
+        echo "Skipping heavy dependencies (INSTALL_HEAVY=$INSTALL_HEAVY)"; \
+    fi
+
+# Verify installation by testing core imports
+RUN echo "Verifying installation..." && \
+    python -c "import openai; print('✓ OpenAI imported successfully')" && \
+    python -c "import faiss; print('✓ FAISS imported successfully')" && \
+    python -c "import pydantic; print('✓ Pydantic imported successfully')" && \
+    python -c "import numpy; print('✓ NumPy imported successfully')" && \
+    echo "✓ All core dependencies verified"
+
+# Clean up build artifacts and caches to save space
+RUN echo "Cleaning up build artifacts..." && \
     find /usr/local -name '*.pyc' -delete && \
-    find /usr/local -name '__pycache__' -type d -exec rm -rf {} + && \
+    find /usr/local -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true && \
     rm -rf /tmp/* /var/tmp/* && \
     apt-get autoremove -y && \
     apt-get clean && \
