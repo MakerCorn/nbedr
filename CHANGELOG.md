@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - TBD
 
+### Fixed
+- **Document Coordination Race Condition**: Fixed race condition in `DocumentCoordinator.acquire_file_lock()` method where multiple instances could acquire locks for the same file simultaneously, leading to duplicate processing. The fix uses atomic file creation with exclusive open mode ('x') to ensure only one instance can acquire a lock at a time.
+- **Parallel Build Coordination Directory Isolation**: Updated `temp_coordination_dir` test fixture to respect the `TMPDIR` environment variable set by CI/CD, ensuring each parallel build (OS + Python version combination) uses a unique coordination directory. This prevents cross-contamination between the 4 parallel CI builds running simultaneously.
+
 ### Added
 
 #### Enhanced Embedding Provider System

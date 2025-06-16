@@ -24,10 +24,23 @@ class TestDocumentCoordinator:
         import os
         import sys
 
-        with tempfile.TemporaryDirectory(
-            prefix=f"coord_py{sys.version_info.major}{sys.version_info.minor}_{os.getpid()}_"
-        ) as temp_dir:
-            yield Path(temp_dir)
+        # Respect TMPDIR from CI environment for parallel builds
+        base_tmpdir = os.environ.get('TMPDIR')
+        if base_tmpdir:
+            # Use CI-provided TMPDIR (e.g., tmp/coord_ubuntu-latest_py3.11)
+            base_path = Path(base_tmpdir)
+            base_path.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(
+                dir=base_path,
+                prefix=f"test_{os.getpid()}_"
+            ) as temp_dir:
+                yield Path(temp_dir)
+        else:
+            # Fallback for local development
+            with tempfile.TemporaryDirectory(
+                prefix=f"coord_py{sys.version_info.major}{sys.version_info.minor}_{os.getpid()}_"
+            ) as temp_dir:
+                yield Path(temp_dir)
 
     @pytest.fixture
     def coordinator(self, temp_coordination_dir):

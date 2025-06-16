@@ -166,7 +166,7 @@ class DocumentCoordinator:
             file_hash = self._get_file_hash(file_path)
             lock_file_path = self._get_lock_file_path(file_path)
 
-            # Try to create lock file
+            # Try to create lock file atomically
             if lock_file_path.exists():
                 # Check if lock is stale (older than 1 hour)
                 lock_age = time.time() - lock_file_path.stat().st_mtime
@@ -177,9 +177,14 @@ class DocumentCoordinator:
                     logger.debug(f"File {file_path} is locked by another instance")
                     return False
 
-            # Create lock file
-            with open(lock_file_path, "w") as f:
-                f.write(f"{self.instance_id}:{datetime.now().isoformat()}")
+            # Use atomic file creation with exclusive open
+            try:
+                with open(lock_file_path, "x") as f:  # 'x' mode fails if file exists
+                    f.write(f"{self.instance_id}:{datetime.now().isoformat()}")
+            except FileExistsError:
+                # Another process created the lock file between our check and creation
+                logger.debug(f"File {file_path} was locked by another instance during acquisition")
+                return False
 
             # Update registry
             with self._lock_registry():
