@@ -9,3 +9,7 @@ pytest-xvfb>=3.0.0
 openai>=1.0.0
 faiss-cpu>=1.7.0
 numpy>=1.21.0
+
+# Vector store testing dependencies
+asyncpg>=0.29.0
+azure-search-documents>=11.4.0

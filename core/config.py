@@ -638,9 +638,62 @@ class EmbeddingConfig:
         if self.rate_limit_max_response_time <= self.rate_limit_target_response_time:
             raise ValueError("rate_limit_max_response_time must be greater than rate_limit_target_response_time")
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert config to a dictionary."""
+        return {
+            field.name: getattr(self, field.name)
+            for field in self.__dataclass_fields__.values()
+            if hasattr(self, field.name)
+        }
 
-def get_config(env_file: Optional[str] = None) -> EmbeddingConfig:
-    """Get validated configuration instance."""
+    def to_json(self) -> str:
+        """Convert config to a JSON string."""
+        config_dict = self.to_dict()
+        # Convert Path objects to strings
+        for key, value in config_dict.items():
+            if isinstance(value, Path):
+                config_dict[key] = str(value)
+        return json.dumps(config_dict, indent=2)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "EmbeddingConfig":
+        """Create config from a dictionary."""
+        # Convert string paths back to Path objects where needed
+        if "datapath" in config_dict and isinstance(config_dict["datapath"], str):
+            config_dict["datapath"] = Path(config_dict["datapath"])
+        return cls(**config_dict)
+
+    @classmethod
+    def from_json(cls, config_json: str) -> "EmbeddingConfig":
+        """Create config from a JSON string."""
+        config_dict = json.loads(config_json)
+        return cls.from_dict(config_dict)
+
+    def __eq__(self, other: object) -> bool:
+        """Test equality with another config object."""
+        if not isinstance(other, EmbeddingConfig):
+            return NotImplemented
+        return self.to_dict() == other.to_dict()
+
+    def copy(self, **kwargs) -> "EmbeddingConfig":
+        """Create a copy of the config with optional modifications."""
+        config_dict = self.to_dict()
+        config_dict.update(kwargs)
+        return self.from_dict(config_dict)
+
+
+def get_config(env_file: Optional[str] = None, **overrides) -> EmbeddingConfig:
+    """Get validated configuration instance with optional parameter overrides.
+    
+    Args:
+        env_file: Optional path to an environment file
+        **overrides: Parameter overrides as keyword arguments
+    
+    Returns:
+        A validated EmbeddingConfig instance
+    """
     config = EmbeddingConfig.from_env(env_file)
+    if overrides:
+        config = config.copy(**overrides)
     config.validate()
     return config
