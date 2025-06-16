@@ -352,10 +352,10 @@ jobs:
         timeout: '10m'
 
     - name: Run container scan
-      if: needs.build-docker.result == 'success'
+      if: needs.build-docker.result == 'success' && github.ref == 'refs/heads/main'
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ghcr.io/${{ needs.build-docker.outputs.repo-name }}:${{ github.sha }}
+        image-ref: ghcr.io/${{ needs.build-docker.outputs.repo-name }}:latest
         format: 'sarif'
         output: 'trivy-container-results.sarif'
         severity: 'CRITICAL,HIGH'
@@ -377,7 +377,7 @@ jobs:
 
     - name: Upload container scan results
       uses: github/codeql-action/upload-sarif@v3
-      if: needs.build-docker.result == 'success'
+      if: needs.build-docker.result == 'success' && github.ref == 'refs/heads/main'
       with:
         sarif_file: 'trivy-container-results.sarif'
         category: container
