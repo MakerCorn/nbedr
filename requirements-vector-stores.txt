@@ -1,17 +1,19 @@
 # Additional vector database support
 # Install with: pip install -r requirements-minimal.txt -r requirements-vector-stores.txt
 
-# ChromaDB support
-chromadb>=0.4.0,<1.0.0
-
-# Pinecone support
+# Pinecone support (lightweight)
 pinecone-client>=3.0.0,<4.0.0
 
-# Elasticsearch support
+# Elasticsearch support (lightweight clients)
 elasticsearch>=8.0.0,<9.0.0
 elasticsearch-dsl>=8.0.0,<9.0.0
 
-# PostgreSQL with pgvector support
+# PostgreSQL with pgvector support (lightweight)
 asyncpg>=0.29.0,<1.0.0
 psycopg2-binary>=2.9.0,<3.0.0
 pgvector>=0.2.0,<1.0.0
+
+# ChromaDB support (heavy - downloads models and dependencies)
+# Note: ChromaDB can download 100MB+ of dependencies including SQLite, DuckDB
+# Only install if specifically needed
+# chromadb>=0.4.0,<1.0.0

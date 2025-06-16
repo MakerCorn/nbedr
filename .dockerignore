@@ -111,3 +111,4 @@ uv.lock
 !requirements-vector-stores.txt
 !requirements-documents.txt
 !requirements-local-llm.txt
+!requirements-heavy.txt

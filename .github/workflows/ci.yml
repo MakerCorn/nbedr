@@ -186,10 +186,28 @@ jobs:
         driver-opts: |
           network=host
           image=moby/buildkit:buildx-stable-1
+        config-inline: |
+          [worker.oci]
+            max-parallelism = 2
+          [worker.containerd]
+            max-parallelism = 2
 
     - name: Set lowercase repository name
       id: repo
       run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+    - name: Free up disk space
+      run: |
+        # Remove unnecessary packages and files to free up space
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker system prune -af
+        sudo apt-get autoremove -y
+        sudo apt-get autoclean
+        # Show available space
+        df -h
 
     - name: Login to GitHub Container Registry
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -238,17 +256,35 @@ jobs:
           BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
 
+    - name: Aggressive cleanup before full build
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Aggressive cleanup after minimal build to free space for multi-platform full build
+        docker system prune -af --volumes
+        docker builder prune -af
+        # Remove any dangling build contexts
+        docker buildx prune -af
+        # Clean up GitHub Actions cache if needed
+        sudo rm -rf /tmp/docker-*
+        sudo rm -rf /var/lib/docker/tmp/*
+        # Show space after cleanup
+        echo "Space after aggressive cleanup:"
+        df -h
+        echo "Docker system usage:"
+        docker system df
+
     - name: Build and push Docker image (full features)
       if: github.ref == 'refs/heads/main'
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./deployment/docker/Dockerfile
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64,linux/arm64  # Multi-platform for Mac ARM support
         push: true
         tags: |
           ghcr.io/${{ steps.repo.outputs.name }}:latest-full
           ghcr.io/${{ steps.repo.outputs.name }}:${{ github.sha }}-full
+          ghcr.io/${{ steps.repo.outputs.name }}:full
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: |
           type=gha
@@ -262,8 +298,17 @@ jobs:
           INSTALL_VECTOR_STORES=true
           INSTALL_DOCUMENTS=true
           INSTALL_LOCAL_LLM=true
+          INSTALL_HEAVY=false
           BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+    - name: Final space check
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Final disk space usage:"
+        df -h
+        echo "Docker system usage:"
+        docker system df
 
     - name: Upload Docker artifacts
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'

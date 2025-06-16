@@ -10,6 +10,7 @@ ARG INSTALL_CLOUD=false
 ARG INSTALL_VECTOR_STORES=false
 ARG INSTALL_DOCUMENTS=false
 ARG INSTALL_LOCAL_LLM=false
+ARG INSTALL_HEAVY=false
 
 # Set labels
 LABEL org.opencontainers.image.title="nBedR" \
@@ -39,37 +40,43 @@ COPY requirements-cloud.txt ./
 COPY requirements-vector-stores.txt ./
 COPY requirements-documents.txt ./
 COPY requirements-local-llm.txt ./
+COPY requirements-heavy.txt ./
 
-# Install minimal dependencies first (always required)
+# Install all dependencies in a single layer to minimize space usage
 RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/tmp/pip-build \
     pip install --upgrade pip setuptools wheel && \
     pip install --only-binary=:all: -r requirements-minimal.txt || \
-    pip install -r requirements-minimal.txt
-
-# Conditionally install optional features
-RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements-minimal.txt && \
+    # Conditionally install optional features
     if [ "$INSTALL_CLOUD" = "true" ]; then \
         pip install --only-binary=:all: -r requirements-cloud.txt || \
         pip install -r requirements-cloud.txt; \
-    fi
-
-RUN --mount=type=cache,target=/root/.cache/pip \
+    fi && \
     if [ "$INSTALL_VECTOR_STORES" = "true" ]; then \
         pip install --only-binary=:all: -r requirements-vector-stores.txt || \
         pip install -r requirements-vector-stores.txt; \
-    fi
-
-RUN --mount=type=cache,target=/root/.cache/pip \
+    fi && \
     if [ "$INSTALL_DOCUMENTS" = "true" ]; then \
         pip install --only-binary=:all: -r requirements-documents.txt || \
         pip install -r requirements-documents.txt; \
-    fi
-
-RUN --mount=type=cache,target=/root/.cache/pip \
+    fi && \
     if [ "$INSTALL_LOCAL_LLM" = "true" ]; then \
         pip install --only-binary=:all: -r requirements-local-llm.txt || \
         pip install -r requirements-local-llm.txt; \
-    fi
+    fi && \
+    if [ "$INSTALL_HEAVY" = "true" ]; then \
+        pip install --only-binary=:all: -r requirements-heavy.txt || \
+        pip install -r requirements-heavy.txt; \
+    fi && \
+    # Clean up build artifacts and caches to save space
+    pip cache purge && \
+    find /usr/local -name '*.pyc' -delete && \
+    find /usr/local -name '__pycache__' -type d -exec rm -rf {} + && \
+    rm -rf /tmp/* /var/tmp/* && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Production stage
 FROM python:3.11-slim AS production

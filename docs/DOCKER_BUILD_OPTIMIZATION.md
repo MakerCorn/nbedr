@@ -26,7 +26,12 @@ The nBedR Docker build has been optimized for speed and flexibility by implement
 
 - **`requirements-local-llm.txt`** - Local LLM providers
   - LMStudio, Ollama, Llama.cpp support
-  - Sentence transformers, HuggingFace models
+  - Lightweight HuggingFace transformers (CPU-only)
+
+- **`requirements-heavy.txt`** - Large optional dependencies
+  - Sentence transformers (500MB+ models)
+  - ChromaDB (100MB+ dependencies)
+  - Only install if specifically needed
 
 ## Build Options
 
@@ -69,9 +74,10 @@ docker build \
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `INSTALL_CLOUD` | `false` | AWS, Azure, Google cloud providers |
-| `INSTALL_VECTOR_STORES` | `false` | ChromaDB, Pinecone, Elasticsearch, pgvector |
+| `INSTALL_VECTOR_STORES` | `false` | Pinecone, Elasticsearch, pgvector (ChromaDB moved to heavy) |
 | `INSTALL_DOCUMENTS` | `false` | PowerPoint, Word, advanced document processing |
-| `INSTALL_LOCAL_LLM` | `false` | Local LLM providers and models |
+| `INSTALL_LOCAL_LLM` | `false` | Local LLM providers (lightweight transformers) |
+| `INSTALL_HEAVY` | `false` | Large dependencies (sentence-transformers, ChromaDB) |
 
 ## CI/CD Integration
 
@@ -84,8 +90,10 @@ The CI workflow builds two variants:
 
 ### Main Branch Builds
 - **Minimal image**: `ghcr.io/makercorn/nbedr:latest`, `ghcr.io/makercorn/nbedr:sha-abc123`
-- **Full-featured image**: `ghcr.io/makercorn/nbedr:latest-full`, `ghcr.io/makercorn/nbedr:sha-abc123-full`
-- Multi-platform (amd64, arm64)
+  - Single platform (amd64) for faster builds
+- **Full-featured image**: `ghcr.io/makercorn/nbedr:latest-full`, `ghcr.io/makercorn/nbedr:full`
+  - Multi-platform (amd64, arm64) - **Full Mac ARM support**
+  - Includes cloud providers, vector stores, document processing, local LLM support
 
 ## Performance Improvements
 
@@ -132,6 +140,20 @@ docker build --build-arg INSTALL_LOCAL_LLM=true -t nbedr:local .
 
 # Run with local model server
 docker run --network host nbedr:local
+```
+
+### Mac ARM Users
+```bash
+# Use the pre-built multi-platform full image
+docker pull ghcr.io/makercorn/nbedr:latest-full
+
+# Or build locally for ARM64
+docker build --platform linux/arm64 \
+  --build-arg INSTALL_CLOUD=true \
+  --build-arg INSTALL_VECTOR_STORES=true \
+  --build-arg INSTALL_DOCUMENTS=true \
+  --build-arg INSTALL_LOCAL_LLM=true \
+  -t nbedr:arm64 .
 ```
 
 ## Migration Guide

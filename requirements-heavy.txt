@@ -1,0 +1,19 @@
+# Heavy optional dependencies (large downloads)
+# Only install these if you specifically need their functionality
+# Install with: pip install -r requirements-minimal.txt -r requirements-heavy.txt
+
+# Sentence transformers (downloads 500MB+ models automatically)
+sentence-transformers>=3.1.0,<4.0.0
+
+# ChromaDB (downloads SQLite, DuckDB, and other heavy dependencies)
+chromadb>=0.4.0,<1.0.0
+
+# Full transformers with all features (can download large models)
+# Note: Use transformers[cpu] in requirements-local-llm.txt for lighter version
+# transformers[torch]>=4.30.0,<5.0.0
+
+# PyTorch (if needed for advanced ML features)
+# torch>=2.0.0,<3.0.0
+
+# TensorFlow (if needed for TensorFlow models)
+# tensorflow>=2.13.0,<3.0.0

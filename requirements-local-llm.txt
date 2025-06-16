@@ -4,10 +4,14 @@
 # HTTP client for local providers (LMStudio, Ollama, Llama.cpp)
 aiohttp>=3.8.0,<4.0.0
 
-# Advanced text processing and embedding models
-sentence-transformers>=3.1.0,<4.0.0
+# Essential text processing
 langchain-openai>=0.0.2,<1.0.0
 scikit-learn>=1.3.0,<2.0.0
 
-# Hugging Face transformers (for local models)
-transformers>=4.30.0,<5.0.0
+# Lightweight transformers (CPU-only, no model downloads by default)
+transformers[cpu]>=4.30.0,<5.0.0
+
+# Sentence transformers (optional - large model downloads)
+# Note: sentence-transformers downloads ~500MB+ models automatically
+# Only install if you need local embedding models
+# sentence-transformers>=3.1.0,<4.0.0
