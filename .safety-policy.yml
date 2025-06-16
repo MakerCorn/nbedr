@@ -1,14 +1,13 @@
-security:
-  ignore-vulnerabilities:
-    # Add any false positives or accepted risks here with explanations
-    # Format:
-    # - id: "XXXX"
-    #   reason: "Explanation of why this is being ignored"
+ignore-cvss-severity-below: 7.0  # Only alert on high and critical severity issues
 
-  ignore-cvss-severity-below: 7.0  # Only alert on high and critical severity issues
+# Specify vulnerabilities to ignore
+ignore-vulnerabilities:
+  # Add specific vulnerabilities to ignore with reasons
+  # Example:
+  # "73169":
+  #   reason: >
+  #     Vulnerability in sentence-transformers is mitigated by using version >=3.1.0
 
-  ignore-python-packages:
-    # Add any packages that should be ignored
-    # Format:
-    # - name: "package-name"
-    #   reason: "Explanation of why this package is being ignored"
+continue-on-vulnerability-error: true
+
+ignore-unpinned-requirements: false

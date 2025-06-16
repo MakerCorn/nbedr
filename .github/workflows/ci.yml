@@ -311,12 +311,11 @@ jobs:
         pip install pip-audit
         pip-audit -r requirements.txt -r requirements-test.txt || echo "Vulnerabilities found"
 
-    - name: Run safety scan
+    - name: Run safety check
       run: |
         pip install safety
-        safety scan requirements.txt requirements-test.txt \
+        safety check \
           --policy-file .safety-policy.yml \
-          --output text \
           --full-report \
           || echo "Vulnerabilities found"
 
