@@ -8,9 +8,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from unittest.mock import mock_open, patch
-from filelock import FileLock
 
 import pytest
+from filelock import FileLock
 
 from core.utils.document_coordinator import DocumentCoordinator, DocumentStatus
 
