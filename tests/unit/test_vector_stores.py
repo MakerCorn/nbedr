@@ -70,7 +70,7 @@ class TestVectorStoresModule:
             assert PGVectorStore is not None
             assert isinstance(PGVectorStore, type)
         except ImportError as e:
-            if "psycopg" in str(e) or "azure.search" in str(e):
+            if any(dep in str(e) for dep in ["psycopg", "azure.search", "asyncpg"]):
                 pytest.skip(f"Optional PostgreSQL dependency missing: {e}")
             else:
                 pytest.fail(f"Failed to import PGVectorStore: {e}")
