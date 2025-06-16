@@ -22,7 +22,7 @@ sys.path.insert(0, str(current_dir))
 def main():
     """Main entry point."""
     try:
-        from cli.main import main as cli_main
+        from nbedr.cli.main import main as cli_main
 
         cli_main()
     except ImportError as e:

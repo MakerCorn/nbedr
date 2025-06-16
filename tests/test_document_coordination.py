@@ -12,7 +12,7 @@ from unittest.mock import mock_open, patch
 import pytest
 from filelock import FileLock
 
-from core.utils.document_coordinator import DocumentCoordinator, DocumentStatus
+from nbedr.core.utils.document_coordinator import DocumentCoordinator, DocumentStatus
 
 
 class TestDocumentCoordinator:

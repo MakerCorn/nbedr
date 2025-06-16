@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from core.utils.embedding_utils import cosine_similarity, euclidean_distance, normalize_embedding
+from nbedr.core.utils.embedding_utils import cosine_similarity, euclidean_distance, normalize_embedding
 
 
 class TestNormalizeEmbedding:

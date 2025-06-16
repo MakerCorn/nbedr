@@ -18,9 +18,9 @@ if sys.version_info < (3, 11):
     print("Please upgrade your Python installation.")
     sys.exit(1)
 
-from core.config import EmbeddingConfig, get_config
-from core.models import DocumentChunk
-from core.services.document_service import DocumentService
+from nbedr.core.config import EmbeddingConfig, get_config
+from nbedr.core.models import DocumentChunk
+from nbedr.core.services.document_service import DocumentService
 
 
 # Basic logging setup
@@ -509,7 +509,7 @@ def validate_create_embeddings(service: DocumentService, config: EmbeddingConfig
 
 def handle_list_instances(args: argparse.Namespace) -> None:
     """Handle list-instances command."""
-    from core.utils.instance_coordinator import create_instance_coordinator
+    from nbedr.core.utils.instance_coordinator import create_instance_coordinator
 
     try:
         # Create a temporary coordinator to access instance registry
@@ -543,8 +543,8 @@ def handle_list_instances(args: argparse.Namespace) -> None:
 
 def handle_cleanup_locks(args: argparse.Namespace) -> None:
     """Handle cleanup-locks command."""
-    from core.utils.document_coordinator import DocumentCoordinator
-    from core.utils.instance_coordinator import create_instance_coordinator
+    from nbedr.core.utils.document_coordinator import DocumentCoordinator
+    from nbedr.core.utils.instance_coordinator import create_instance_coordinator
 
     try:
         config = get_config(args.env_file)
@@ -571,8 +571,8 @@ def handle_cleanup_locks(args: argparse.Namespace) -> None:
 
 def handle_reset_failed(args: argparse.Namespace) -> None:
     """Handle reset-failed command."""
-    from core.utils.document_coordinator import DocumentCoordinator
-    from core.utils.instance_coordinator import create_instance_coordinator
+    from nbedr.core.utils.document_coordinator import DocumentCoordinator
+    from nbedr.core.utils.instance_coordinator import create_instance_coordinator
 
     try:
         config = get_config(args.env_file)

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from core.config import EmbeddingConfig, get_config
+from nbedr.core.config import EmbeddingConfig, get_config
 
 
 class TestEmbeddingConfig:

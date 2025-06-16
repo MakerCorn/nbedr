@@ -7,21 +7,21 @@ from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 import pytest
 
 # Test both new and legacy APIs
-from core.clients import (
+from nbedr.core.clients import (
     BaseEmbeddingProvider,
     EmbeddingProviderFactory,
     EmbeddingResult,
     OpenAIEmbeddingProvider,
     create_provider_from_config,
 )
-from core.clients.openai_client import (
+from nbedr.core.clients.openai_client import (
     EmbeddingClient,
     build_langchain_embeddings,
     build_openai_client,
     create_embedding_client,
     is_azure,
 )
-from core.config import EmbeddingConfig, get_config
+from nbedr.core.config import EmbeddingConfig, get_config
 
 
 class TestAzureDetection:

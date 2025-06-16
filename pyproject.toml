@@ -92,7 +92,7 @@ all = [
 ]
 
 [project.scripts]
-nbedr = "cli.main:main"
+nbedr = "nbedr.cli.main:main"
 
 [project.urls]
 "Homepage" = "https://github.com/your-org/nbedr"
@@ -100,7 +100,7 @@ nbedr = "cli.main:main"
 "Source" = "https://github.com/your-org/nbedr"
 
 [tool.setuptools.packages.find]
-include = ["core*", "cli*"]
+include = ["nbedr*"]
 exclude = ["tests*", "docs*", "scripts*"]
 
 [tool.setuptools.package-data]
