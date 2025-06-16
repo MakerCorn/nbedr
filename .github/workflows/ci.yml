@@ -99,7 +99,9 @@ jobs:
     - name: Run coordination tests
       env:
         NBEDR_DISABLE_COORDINATION: "false"
+        TMPDIR: tmp/coord_${{ matrix.os }}_py${{ matrix.python-version }}
       run: |
+        mkdir -p "$TMPDIR"
         pytest tests/test_coordination_basic.py tests/test_document_coordination.py tests/test_parallel_instances.py -v --tb=short --timeout=300
 
     - name: Upload coverage reports

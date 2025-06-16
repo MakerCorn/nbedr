@@ -307,6 +307,10 @@ class TestMultipleInstanceScenarios:
         def try_process_file(instance_id, file_path):
             coordinator = DocumentCoordinator(temp_coordination_dir, instance_id)
 
+            # First check if we can process the file
+            if not coordinator.can_process_file(file_path):
+                return f"{instance_id} skipped {file_path.name} (cannot process)"
+
             # Try to acquire the lock
             if coordinator.acquire_file_lock(file_path):
                 try:
