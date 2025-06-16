@@ -602,7 +602,7 @@ class TestIdentityUtils:
 
     def test_get_db_token(self):
         """Test database token retrieval."""
-        with patch("core.utils.identity_utils._get_token") as mock_get_token:
+        with patch("nbedr.core.utils.identity_utils._get_token") as mock_get_token:
             mock_get_token.return_value = "db_token"
 
             token = get_db_token()
@@ -612,7 +612,7 @@ class TestIdentityUtils:
 
     def test_get_azure_openai_token(self):
         """Test Azure OpenAI token retrieval."""
-        with patch("core.utils.identity_utils.get_cognitive_service_token") as mock_get_cognitive:
+        with patch("nbedr.core.utils.identity_utils.get_cognitive_service_token") as mock_get_cognitive:
             mock_get_cognitive.return_value = "openai_token"
 
             token = get_azure_openai_token()
@@ -622,7 +622,7 @@ class TestIdentityUtils:
 
     def test_get_cognitive_service_token(self):
         """Test cognitive service token retrieval."""
-        with patch("core.utils.identity_utils._get_token") as mock_get_token:
+        with patch("nbedr.core.utils.identity_utils._get_token") as mock_get_token:
             mock_get_token.return_value = "cognitive_token"
 
             token = get_cognitive_service_token()

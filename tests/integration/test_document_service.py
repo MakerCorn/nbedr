@@ -73,7 +73,7 @@ class TestDocumentServiceIntegration:
     @pytest.fixture
     def document_service(self, embedding_config, mock_embedding_provider):
         """Create document service with mocked embedding provider."""
-        with patch("core.clients.create_provider_from_config", return_value=mock_embedding_provider):
+        with patch("nbedr.core.clients.create_provider_from_config", return_value=mock_embedding_provider):
             service = DocumentService(embedding_config, enable_coordination=False)
             return service
 
@@ -154,7 +154,7 @@ class TestRealProviderIntegration:
             embedding_dimensions=1536,
         )
 
-        with patch("core.clients.create_provider_from_config") as mock_create:
+        with patch("nbedr.core.clients.create_provider_from_config") as mock_create:
             mock_provider = Mock(spec=BaseEmbeddingProvider)
             mock_provider.provider_name = "openai"
             mock_create.return_value = mock_provider
