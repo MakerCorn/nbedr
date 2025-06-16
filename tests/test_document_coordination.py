@@ -20,8 +20,10 @@ class TestDocumentCoordinator:
 
     @pytest.fixture
     def temp_coordination_dir(self):
-        """Create a temporary coordination directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        """Create a unique temporary coordination directory per test run."""
+        import sys
+        import os
+        with tempfile.TemporaryDirectory(prefix=f"coord_py{sys.version_info.major}{sys.version_info.minor}_{os.getpid()}_") as temp_dir:
             yield Path(temp_dir)
 
     @pytest.fixture
