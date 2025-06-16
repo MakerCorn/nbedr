@@ -12,20 +12,20 @@ from unittest.mock import Mock
 import pytest
 
 # Import core modules with new API structure
-from core.clients import (
+from nbedr.core.clients import (
     BaseEmbeddingProvider,
     EmbeddingProviderFactory,
     EmbeddingResult,
 )
-from core.config import EmbeddingConfig
-from core.models import (
+from nbedr.core.config import EmbeddingConfig
+from nbedr.core.models import (
     DocumentChunk,
     EmbeddingBatch,
     VectorDatabaseConfig,
     VectorDatabaseType,
 )
-from core.services.document_service import DocumentService
-from core.utils.rate_limiter import RateLimitConfig, RateLimiter, RateLimitStrategy
+from nbedr.core.services.document_service import DocumentService
+from nbedr.core.utils.rate_limiter import RateLimitConfig, RateLimiter, RateLimitStrategy
 
 
 @pytest.fixture(scope="session")
