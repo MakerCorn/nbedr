@@ -519,8 +519,8 @@ class TestIdentityUtils:
         assert isinstance(formatted, str)
         assert "2022-01-01" in formatted or "2021-12-31" in formatted  # Account for timezone
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", True)
-    @patch("core.utils.identity_utils.credential")
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", True)
+    @patch("nbedr.core.utils.identity_utils.credential")
     def test_get_token_success(self, mock_credential):
         """Test successful token retrieval."""
         mock_token = Mock()
@@ -534,26 +534,26 @@ class TestIdentityUtils:
         assert token == "test_token_value"
         mock_credential.get_token.assert_called_once_with("https://test.resource/.default")
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", False)
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", False)
     def test_get_token_azure_unavailable(self):
         """Test token retrieval when Azure is unavailable."""
         token = _get_token("test_token", "https://test.resource/.default")
         assert token is None
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", True)
-    @patch("core.utils.identity_utils.credential")
-    @patch("core.utils.identity_utils.tokens", {})  # Clear token cache
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", True)
+    @patch("nbedr.core.utils.identity_utils.credential")
+    @patch("nbedr.core.utils.identity_utils.tokens", {})  # Clear token cache
     def test_get_token_credential_error(self, mock_credential):
         """Test token retrieval with credential error."""
-        from core.utils.identity_utils import CredentialUnavailableError
+        from nbedr.core.utils.identity_utils import CredentialUnavailableError
 
         mock_credential.get_token.side_effect = CredentialUnavailableError("No credentials")
 
         token = _get_token("test_token", "https://test.resource/.default")
         assert token is None
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", True)
-    @patch("core.utils.identity_utils.credential")
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", True)
+    @patch("nbedr.core.utils.identity_utils.credential")
     def test_get_token_caching(self, mock_credential):
         """Test token caching behavior."""
         mock_token = Mock()
@@ -573,8 +573,8 @@ class TestIdentityUtils:
         # Should only call credential once due to caching
         mock_credential.get_token.assert_called_once()
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", True)
-    @patch("core.utils.identity_utils.credential")
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", True)
+    @patch("nbedr.core.utils.identity_utils.credential")
     def test_get_token_expired_cache(self, mock_credential):
         """Test token refresh when cached token is expired."""
         # First token (expired)
@@ -701,8 +701,8 @@ class TestUtilsIntegration:
             if os.path.exists(test_file):
                 os.unlink(test_file)
 
-    @patch("core.utils.identity_utils.AZURE_AVAILABLE", True)
-    @patch("core.utils.identity_utils.credential")
+    @patch("nbedr.core.utils.identity_utils.AZURE_AVAILABLE", True)
+    @patch("nbedr.core.utils.identity_utils.credential")
     def test_azure_identity_with_env_config(self, mock_credential):
         """Test Azure identity integration with environment configuration."""
         mock_token = Mock()

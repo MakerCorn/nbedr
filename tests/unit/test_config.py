@@ -90,57 +90,6 @@ class TestEmbeddingConfig:
         assert config.workers == 8
         assert config.rate_limit_enabled is True
 
-    @pytest.mark.skip(reason="Serialization methods not implemented in current EmbeddingConfig")
-    def test_config_serialization(self):
-        """Test config serialization to dict and JSON."""
-        config = EmbeddingConfig(
-            embedding_provider="openai",
-            embedding_model="text-embedding-3-small",
-            openai_api_key="test-key",
-            embedding_dimensions=1536,
-        )
-
-        # Test to_dict
-        config_dict = config.to_dict()
-        assert isinstance(config_dict, dict)
-        assert config_dict["embedding_provider"] == "openai"
-        assert config_dict["embedding_model"] == "text-embedding-3-small"
-        assert config_dict["openai_api_key"] == "test-key"
-        assert config_dict["embedding_dimensions"] == 1536
-
-        # Test to_json
-        config_json = config.to_json()
-        assert isinstance(config_json, str)
-        parsed = json.loads(config_json)
-        assert parsed["embedding_provider"] == "openai"
-        assert parsed["embedding_model"] == "text-embedding-3-small"
-
-    @pytest.mark.skip(reason="Deserialization methods not implemented in current EmbeddingConfig")
-    def test_config_deserialization(self):
-        """Test config deserialization from dict and JSON."""
-        config_dict = {
-            "embedding_provider": "openai",
-            "embedding_model": "text-embedding-3-small",
-            "openai_api_key": "test-key",
-            "embedding_dimensions": 1536,
-            "batch_size_embeddings": 50,
-        }
-
-        # Test from_dict
-        config = EmbeddingConfig.from_dict(config_dict)
-        assert config.embedding_provider == "openai"
-        assert config.embedding_model == "text-embedding-3-small"
-        assert config.openai_api_key == "test-key"
-        assert config.embedding_dimensions == 1536
-        assert config.batch_size_embeddings == 50
-
-        # Test from_json
-        config_json = json.dumps(config_dict)
-        config2 = EmbeddingConfig.from_json(config_json)
-        assert config2.embedding_provider == "openai"
-        assert config2.embedding_model == "text-embedding-3-small"
-
-    @pytest.mark.skip(reason="Equality methods not implemented in current EmbeddingConfig")
     def test_config_equality(self):
         """Test config equality comparison."""
         config1 = EmbeddingConfig(
@@ -164,7 +113,6 @@ class TestEmbeddingConfig:
         assert config1 == config2
         assert config1 != config3
 
-    @pytest.mark.skip(reason="Copy methods not implemented in current EmbeddingConfig")
     def test_config_copy(self):
         """Test config copying and modification."""
         original = EmbeddingConfig(
@@ -232,9 +180,12 @@ class TestGetConfig:
         assert isinstance(config, EmbeddingConfig)
         assert config.embedding_provider == "openai"
 
-    @pytest.mark.skip(reason="get_config does not support parameter overrides in current implementation")
-    def test_get_config_with_overrides(self):
+    def test_get_config_with_overrides(self, monkeypatch):
         """Test getting config with parameter overrides."""
+        # Set required env vars for azure_openai validation
+        monkeypatch.setenv("AZURE_OPENAI_API_KEY", "test-key")
+        monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://test.openai.azure.com/")
+
         config = get_config(
             embedding_provider="azure_openai",
             embedding_model="text-embedding-3-large",
@@ -288,7 +239,6 @@ class TestGetConfig:
             os.unlink(env_file)
 
 
-@pytest.mark.skip(reason="Config integration tests expect different implementation - architectural mismatch")
 class TestConfigIntegration:
     """Integration tests for config functionality."""
 
@@ -299,20 +249,20 @@ class TestConfigIntegration:
         monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
         monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
         monkeypatch.setenv("EMBEDDING_DIMENSIONS", "1536")
-        monkeypatch.setenv("BATCH_SIZE", "100")
-        monkeypatch.setenv("MAX_WORKERS", "4")
+        monkeypatch.setenv("EMBEDDING_BATCH_SIZE", "100")
+        monkeypatch.setenv("EMBEDDING_WORKERS", "4")
         monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
-        monkeypatch.setenv("CHUNK_SIZE", "512")
-        monkeypatch.setenv("CHUNKING_STRATEGY", "semantic")
+        monkeypatch.setenv("EMBEDDING_CHUNK_SIZE", "512")
+        monkeypatch.setenv("EMBEDDING_CHUNKING_STRATEGY", "semantic")
 
         config = get_config()
 
-        assert config.provider == "openai"
-        assert config.api_key == "sk-test123456789"
-        assert config.model == "text-embedding-3-small"
-        assert config.dimensions == 1536
-        assert config.batch_size == 100
-        assert config.max_workers == 4
+        assert config.embedding_provider == "openai"
+        assert config.openai_api_key == "sk-test123456789"
+        assert config.embedding_model == "text-embedding-3-small"
+        assert config.embedding_dimensions == 1536
+        assert config.batch_size_embeddings == 100
+        assert config.workers == 4
         assert config.rate_limit_enabled is True
         assert config.chunk_size == 512
         assert config.chunking_strategy == "semantic"

@@ -17,8 +17,8 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 # Import after path manipulation
-from core.config import EmbeddingConfig, get_config  # noqa: E402
-from core.utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator  # noqa: E402
+from nbedr.core.config import EmbeddingConfig, get_config  # noqa: E402
+from nbedr.core.utils.instance_coordinator import InstanceCoordinator, create_instance_coordinator  # noqa: E402
 
 
 def create_test_config(instance_id: int, temp_dir: Path) -> Path:

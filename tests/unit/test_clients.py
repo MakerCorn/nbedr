@@ -51,10 +51,10 @@ class TestAzureDetection:
 class TestBuildOpenAIClient:
     """Test cases for building OpenAI client instances (legacy API)."""
 
-    @patch("core.clients.openai_client.OpenAI")
-    @patch("core.clients.openai_client.is_azure")
-    @patch("core.clients.openai_client.read_env_config")
-    @patch("core.clients.openai_client.set_env")
+    @patch("nbedr.core.clients.openai_client.OpenAI")
+    @patch("nbedr.core.clients.openai_client.is_azure")
+    @patch("nbedr.core.clients.openai_client.read_env_config")
+    @patch("nbedr.core.clients.openai_client.set_env")
     def test_build_openai_client_standard(self, mock_set_env, mock_read_env, mock_is_azure, mock_openai):
         """Test building standard OpenAI client."""
         # Setup mocks
@@ -76,10 +76,10 @@ class TestBuildOpenAIClient:
             organization="test-org",
         )
 
-    @patch("core.clients.openai_client.AzureOpenAI")
-    @patch("core.clients.openai_client.is_azure")
-    @patch("core.clients.openai_client.read_env_config")
-    @patch("core.clients.openai_client.set_env")
+    @patch("nbedr.core.clients.openai_client.AzureOpenAI")
+    @patch("nbedr.core.clients.openai_client.is_azure")
+    @patch("nbedr.core.clients.openai_client.read_env_config")
+    @patch("nbedr.core.clients.openai_client.set_env")
     def test_build_openai_client_azure(self, mock_set_env, mock_read_env, mock_is_azure, mock_azure_openai):
         """Test building Azure OpenAI client."""
         # Setup mocks
@@ -160,8 +160,8 @@ class TestOpenAIEmbeddingProvider:
         assert openai_provider.model_name == "text-embedding-3-small"
         assert openai_provider.get_max_batch_size() == 2048
 
-    @patch("core.clients.openai_embedding_provider.AsyncOpenAI")
-    @patch("core.clients.openai_embedding_provider.OpenAI")
+    @patch("nbedr.core.clients.openai_embedding_provider.AsyncOpenAI")
+    @patch("nbedr.core.clients.openai_embedding_provider.OpenAI")
     @pytest.mark.asyncio
     async def test_generate_embeddings_success(self, mock_openai_class, mock_async_openai_class, openai_provider):
         """Test successful embedding generation."""
@@ -195,8 +195,8 @@ class TestOpenAIEmbeddingProvider:
         assert result.usage_stats is not None and result.usage_stats["provider"] == "openai"
         assert result.token_count == 20
 
-    @patch("core.clients.openai_embedding_provider.AsyncOpenAI")
-    @patch("core.clients.openai_embedding_provider.OpenAI")
+    @patch("nbedr.core.clients.openai_embedding_provider.AsyncOpenAI")
+    @patch("nbedr.core.clients.openai_embedding_provider.OpenAI")
     @pytest.mark.asyncio
     async def test_generate_embeddings_fallback(self, mock_openai_class, mock_async_openai_class, openai_provider):
         """Test fallback to mock embeddings when API fails."""
@@ -279,7 +279,7 @@ class TestBuildLangChainEmbeddings:
     """Test cases for LangChain embeddings builder."""
 
     @patch("langchain_openai.OpenAIEmbeddings")
-    @patch("core.clients.openai_client.is_azure")
+    @patch("nbedr.core.clients.openai_client.is_azure")
     def test_build_openai_embeddings(self, mock_is_azure, mock_openai_embeddings):
         """Test building OpenAI embeddings for LangChain."""
         mock_is_azure.return_value = False
@@ -292,7 +292,7 @@ class TestBuildLangChainEmbeddings:
         mock_openai_embeddings.assert_called_once()
 
     @patch("langchain_openai.AzureOpenAIEmbeddings")
-    @patch("core.clients.openai_client.is_azure")
+    @patch("nbedr.core.clients.openai_client.is_azure")
     def test_build_azure_embeddings(self, mock_is_azure, mock_azure_embeddings):
         """Test building Azure OpenAI embeddings for LangChain."""
         mock_is_azure.return_value = True
@@ -308,7 +308,7 @@ class TestBuildLangChainEmbeddings:
 class TestCreateEmbeddingClient:
     """Test cases for embedding client factory function."""
 
-    @patch("core.clients.openai_client.EmbeddingClient")
+    @patch("nbedr.core.clients.openai_client.EmbeddingClient")
     def test_create_embedding_client(self, mock_embedding_client):
         """Test creating embedding client."""
         mock_client = Mock()

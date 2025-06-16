@@ -7,10 +7,11 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from core.clients import BaseEmbeddingProvider, EmbeddingResult, create_provider_from_config
-from core.config import EmbeddingConfig
-from core.models import DocumentChunk
-from core.services.document_service import DocumentService
+
+from nbedr.core.clients import BaseEmbeddingProvider, EmbeddingResult, create_provider_from_config
+from nbedr.core.config import EmbeddingConfig
+from nbedr.core.models import DocumentChunk
+from nbedr.core.services.document_service import DocumentService
 
 
 class TestDocumentServiceIntegration:

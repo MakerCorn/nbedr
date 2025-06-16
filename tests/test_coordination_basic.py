@@ -21,7 +21,7 @@ def test_coordination_functionality():
     print("Testing instance coordination functionality...")
 
     # Import here to avoid dependency issues
-    from core.utils.instance_coordinator import InstanceCoordinator, InstanceInfo
+    from nbedr.core.utils.instance_coordinator import InstanceCoordinator, InstanceInfo
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -100,7 +100,7 @@ def test_file_locking():
     """Test basic file locking functionality."""
     print("Testing file locking functionality...")
 
-    from core.utils.instance_coordinator import InstanceCoordinator
+    from nbedr.core.utils.instance_coordinator import InstanceCoordinator
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -129,7 +129,7 @@ def test_shared_rate_limiter():
     """Test shared rate limiter functionality."""
     print("Testing shared rate limiter functionality...")
 
-    from core.utils.instance_coordinator import InstanceCoordinator, SharedRateLimiter
+    from nbedr.core.utils.instance_coordinator import InstanceCoordinator, SharedRateLimiter
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
