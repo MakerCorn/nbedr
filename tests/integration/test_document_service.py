@@ -49,7 +49,7 @@ class TestDocumentServiceIntegration:
         """Create vector database configuration for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
             yield VectorDatabaseConfig(
-                type=VectorDatabaseType.FAISS,
+                db_type=VectorDatabaseType.FAISS,
                 connection_params={"index_path": str(Path(temp_dir) / "test_index")},
             )
 
@@ -74,7 +74,8 @@ class TestDocumentServiceIntegration:
             return EmbeddingResult(
                 embeddings=embeddings,
                 model="text-embedding-3-small",
-                usage={"prompt_tokens": len(texts) * 10, "total_tokens": len(texts) * 10},
+                dimensions=1536,
+                usage_stats={"prompt_tokens": len(texts) * 10, "total_tokens": len(texts) * 10},
             )
 
         provider.generate_embeddings = mock_generate_embeddings
@@ -94,7 +95,7 @@ class TestDocumentServiceIntegration:
         source = LocalInputSource(str(temp_docs_dir))
 
         # Process documents
-        result = await document_service.process_documents_from_source(source)
+        result = await document_service.process_documents_from_source(source)  # type: ignore[attr-defined]
 
         # Verify results
         assert result is not None

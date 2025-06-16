@@ -119,7 +119,7 @@ class TestEmbeddingProviderFactory:
 
         assert isinstance(provider, OpenAIEmbeddingProvider)
         assert provider.provider_name == "openai"
-        assert provider.model_name == "text-embedding-3-small"
+        assert provider.model_name == "text-embedding-3-small"  # type: ignore[attr-defined]
 
     def test_create_provider_from_config(self):
         """Test creating provider from EmbeddingConfig."""
@@ -192,7 +192,7 @@ class TestOpenAIEmbeddingProvider:
         assert len(result.embeddings) == 2
         assert len(result.embeddings[0]) == 1536
         assert result.model == "text-embedding-3-small"
-        assert result.usage_stats["provider"] == "openai"
+        assert result.usage_stats is not None and result.usage_stats["provider"] == "openai"
         assert result.token_count == 20
 
     @patch("core.clients.openai_embedding_provider.AsyncOpenAI")
@@ -339,7 +339,7 @@ class TestProviderIntegration:
 
         # Test basic properties
         assert provider.provider_name == "openai"
-        assert provider.model_name == "text-embedding-3-small"
+        assert provider.model_name == "text-embedding-3-small"  # type: ignore[attr-defined]
 
         # Test model info
         info = await provider.get_model_info("text-embedding-3-small")

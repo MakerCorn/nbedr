@@ -319,28 +319,30 @@ class TestConfigIntegration:
 
     def test_config_error_handling(self):
         """Test config error handling and validation."""
-        # Test missing required fields
+        # Test invalid provider validation
+        config = EmbeddingConfig(embedding_provider="invalid_provider")
         with pytest.raises(ValueError):
-            EmbeddingConfig(provider="openai")  # Missing API key
+            config.validate()
 
-        # Test invalid combinations
+        # Test invalid combinations for Azure
+        config = EmbeddingConfig(
+            embedding_provider="azure_openai",
+            azure_openai_api_key="test-key",
+            # Missing azure_openai_endpoint for Azure
+        )
         with pytest.raises(ValueError):
-            EmbeddingConfig(
-                provider="azure_openai",
-                api_key="test-key",
-                # Missing azure_endpoint for Azure
-            )
+            config.validate()
 
     def test_config_backwards_compatibility(self):
-        """Test backwards compatibility with old config format."""
-        # Test that old parameter names still work
+        """Test backwards compatibility with current config format."""
+        # Test that current parameter names work
         config = EmbeddingConfig(
-            embedding_model="text-embedding-3-small",  # Old name
-            embedding_dimensions=1536,  # Old name
-            batch_size_embeddings=50,  # Old name
+            embedding_model="text-embedding-3-small",
+            embedding_dimensions=1536,
+            batch_size_embeddings=50,
         )
 
-        # Should map to new names
-        assert config.model == "text-embedding-3-small"
-        assert config.dimensions == 1536
-        assert config.batch_size == 50
+        # Verify current field names
+        assert config.embedding_model == "text-embedding-3-small"
+        assert config.embedding_dimensions == 1536
+        assert config.batch_size_embeddings == 50

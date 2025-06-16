@@ -127,7 +127,7 @@ def mock_embedding_provider():
 def mock_vector_db_config():
     """Create a mock vector database configuration."""
     return VectorDatabaseConfig(
-        type=VectorDatabaseType.FAISS,
+        db_type=VectorDatabaseType.FAISS,
         connection_params={"index_path": "./test_embeddings"},
     )
 
@@ -201,7 +201,7 @@ def rate_limit_config():
         strategy=RateLimitStrategy.SLIDING_WINDOW,
         requests_per_minute=60,
         tokens_per_minute=50000,
-        max_burst=10,
+        max_burst_requests=10,
     )
 
 
