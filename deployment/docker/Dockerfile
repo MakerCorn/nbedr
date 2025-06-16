@@ -1,5 +1,5 @@
 # Multi-stage build for nBedR
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.11-slim as production
+FROM python:3.11-slim AS production
 
 # Create non-root user
 RUN groupadd -r nbedr && useradd -r -g nbedr nbedr
