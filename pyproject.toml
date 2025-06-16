@@ -196,7 +196,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["nbedr/core", "nbedr/cli"]
+source = ["nbedr"]
 omit = [
     "*/tests/*",
     "*/test_*",
