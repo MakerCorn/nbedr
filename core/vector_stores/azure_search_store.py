@@ -95,13 +95,8 @@ class AzureAISearchVectorStore(BaseVectorStore):
             ]
 
             # Configure vector search
-            hnsw_params = HnswParameters(
-                m=4,
-                ef_construction=400,
-                ef_search=500,
-                metric="cosine"
-            )
-            
+            hnsw_params = HnswParameters(m=4, ef_construction=400, ef_search=500, metric="cosine")
+
             vector_search = VectorSearch(
                 algorithms=[
                     HnswAlgorithmConfiguration(
@@ -249,16 +244,16 @@ class AzureAISearchVectorStore(BaseVectorStore):
         try:
             # Get index statistics
             index_stats = self.index_client.get_index_statistics(self.index_name)
-            
+
             # Handle the case where index_stats might be a MutableMapping
-            if hasattr(index_stats, 'document_count') and hasattr(index_stats, 'storage_size'):
+            if hasattr(index_stats, "document_count") and hasattr(index_stats, "storage_size"):
                 document_count = index_stats.document_count
                 storage_size = index_stats.storage_size
             else:
                 # Fallback for dictionary-like response
-                stats_dict = dict(index_stats) if hasattr(index_stats, 'items') else {}
-                document_count = stats_dict.get('document_count', 0)
-                storage_size = stats_dict.get('storage_size', 0)
+                stats_dict = dict(index_stats) if hasattr(index_stats, "items") else {}
+                document_count = stats_dict.get("document_count", 0)
+                storage_size = stats_dict.get("storage_size", 0)
 
             return {
                 "index_name": self.index_name,
