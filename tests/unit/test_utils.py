@@ -11,7 +11,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
-from core.utils.env_config import (
+
+from nbedr.core.utils.env_config import (
     format_prefix,
     get_env_variable,
     load_env_file,
@@ -19,8 +20,8 @@ from core.utils.env_config import (
     read_env_config_prefixed,
     set_env,
 )
-from core.utils.file_utils import extract_random_jsonl_rows, format_file_path, read_file_lines, split_jsonl_file
-from core.utils.identity_utils import (
+from nbedr.core.utils.file_utils import extract_random_jsonl_rows, format_file_path, read_file_lines, split_jsonl_file
+from nbedr.core.utils.identity_utils import (
     AZURE_AVAILABLE,
     _format_datetime,
     _get_token,
@@ -30,7 +31,7 @@ from core.utils.identity_utils import (
 )
 
 # Import utility modules
-from core.utils.rate_limiter import (
+from nbedr.core.utils.rate_limiter import (
     RateLimitConfig,
     RateLimiter,
     RateLimitStrategy,

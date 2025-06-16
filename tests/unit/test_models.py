@@ -8,7 +8,8 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from core.models import (
+
+from nbedr.core.models import (
     ChunkingStrategy,
     DocType,
     DocumentChunk,
