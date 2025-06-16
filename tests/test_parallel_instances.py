@@ -95,23 +95,43 @@ def run_instance(instance_id: int, config_file: Path, docs_dir: Path, temp_dir: 
     print(f"Starting instance {instance_id}")
 
     # Run nBedR instance
+    project_root = Path(__file__).parent.parent
+    script_path = project_root / "demo_cli.py"
+
     cmd = [
         sys.executable,
-        str(Path(__file__).parent.parent / "nbedr.py"),
+        str(script_path),
         "create-embeddings",
-        "--env-file",
-        str(config_file),
         "--datapath",
         str(docs_dir),
+        "--output",
+        str(temp_dir / f"output_{instance_id}"),
         "--doctype",
         "txt",
-        "--verbose",
+        "--source-type",
+        "local",
+        "--embedding-model",
+        "text-embedding-3-small",
+        "--vector-db-type",
+        "faiss",
     ]
+
+    # Set environment variables from config file
+    env = os.environ.copy()
+    if config_file and config_file.exists():
+        with open(config_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    key, value = line.split("=", 1)
+                    env[key.strip()] = value.strip()
 
     start_time = time.time()
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=current_dir)  # 2 minute timeout
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=120, env=env, cwd=str(project_root)
+        )  # Run from project root
 
         end_time = time.time()
 

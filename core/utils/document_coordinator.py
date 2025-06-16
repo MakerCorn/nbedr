@@ -318,3 +318,16 @@ class DocumentCoordinator:
         except Exception as e:
             logger.error(f"Error getting files by status {status}: {e}")
             return []
+
+    def is_file_completed(self, file_path: Path) -> bool:
+        """Check if a file has been successfully processed."""
+        try:
+            file_hash = self._get_file_hash(file_path)
+            with self._lock_registry():
+                registry = self._load_registry()
+                if file_hash in registry:
+                    return registry[file_hash].status == "completed"
+                return False
+        except Exception as e:
+            logger.error(f"Error checking completion status for {file_path}: {e}")
+            return False
