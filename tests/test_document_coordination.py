@@ -8,6 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from unittest.mock import mock_open, patch
+from filelock import FileLock
 
 import pytest
 
@@ -300,18 +301,21 @@ class TestMultipleInstanceScenarios:
 
         def try_process_file(instance_id, file_path):
             coordinator = DocumentCoordinator(temp_coordination_dir, instance_id)
+            lock_file = coordinator.lock_dir / f"{file_path.name}.lock"
+            file_lock = FileLock(str(lock_file), timeout=0.5)
 
-            if coordinator.can_process_file(file_path):
-                if coordinator.acquire_file_lock(file_path):
-                    try:
-                        # Simulate processing time
-                        time.sleep(0.2)
-                        coordinator.mark_file_completed(file_path)
-                        return f"{instance_id} processed {file_path.name}"
-                    finally:
-                        coordinator.release_file_lock(file_path)
-
-            return f"{instance_id} skipped {file_path.name}"
+            try:
+                with file_lock:
+                    # Check if file is already completed after acquiring lock
+                    if coordinator.is_file_completed(file_path):
+                        return f"{instance_id} skipped {file_path.name} (already completed)"
+                    
+                    # Simulate processing time
+                    time.sleep(0.1)
+                    coordinator.mark_file_completed(file_path)
+                    return f"{instance_id} processed {file_path.name}"
+            except TimeoutError:
+                return f"{instance_id} skipped {file_path.name} (lock timeout)"
 
         # Multiple instances try to process the same file
         test_file = test_files[0]

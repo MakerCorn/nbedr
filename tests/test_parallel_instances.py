@@ -97,7 +97,7 @@ def run_instance(instance_id: int, config_file: Path, docs_dir: Path, temp_dir: 
     # Run nBedR instance
     cmd = [
         sys.executable,
-        "nbedr.py",
+        str(Path(__file__).parent.parent / "nbedr.py"),
         "create-embeddings",
         "--env-file",
         str(config_file),

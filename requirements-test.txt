@@ -59,6 +59,7 @@ python-dotenv>=1.0.0
 coloredlogs>=15.0.0
 tenacity>=8.2.0  # For retries
 jsonschema>=4.17.0  # For JSON validation
+filelock>=3.13.0  # For reliable file locking in tests
 
 # Document processing dependencies
 pdfplumber>=0.10.0
