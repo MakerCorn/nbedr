@@ -58,13 +58,13 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake libarrow-dev
+        sudo apt-get install -y cmake
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install -e .[dev,all]
-        pip install pytest-xvfb pytest-asyncio pytest-timeout  # For headless, async, and timeout testing
+        pip install --prefer-binary -e .[dev,all]
+        pip install --prefer-binary pytest-xvfb pytest-asyncio pytest-timeout  # For headless, async, and timeout testing
 
     - name: Run linting
       run: |
