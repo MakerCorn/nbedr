@@ -165,7 +165,7 @@ jobs:
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     needs: test
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
@@ -180,6 +180,10 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: |
+          network=host
+          image=moby/buildkit:buildx-stable-1
 
     - name: Login to GitHub Container Registry
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -209,13 +213,18 @@ jobs:
       with:
         context: .
         file: ./deployment/docker/Dockerfile
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
         push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: |
+          type=gha
+          type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+        cache-to: |
+          type=gha,mode=max
+          type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
         build-args: |
+          BUILDKIT_INLINE_CACHE=1
           BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
 

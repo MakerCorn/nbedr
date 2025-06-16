@@ -1,0 +1,106 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.pytest_cache/
+.coverage
+.mypy_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+
+# Tests
+tests/
+**/test_*.py
+**/conftest.py
+
+# Development files
+.venv/
+venv/
+.env
+.env.*
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
+
+# Large data files
+*.csv
+*.json
+*.parquet
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# ML models and embeddings
+*.bin
+*.pt
+*.pth
+*.model
+embeddings/
+models/
+checkpoints/
+
+# Deployment
+deployment/k8s/
+deployment/helm/
+Dockerfile*
+!deployment/docker/Dockerfile
+
+# Scripts
+scripts/
+*.sh
+!scripts/setup_dev.sh
+
+# Lock files (we use requirements.txt)
+Pipfile*
+poetry.lock
+uv.lock
