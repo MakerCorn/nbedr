@@ -93,7 +93,7 @@ def test_coordination_functionality():
         print("    ✅ Cleanup working")
 
         print("✅ All coordination tests passed!")
-        return True
+        # Test completed successfully - no return needed for pytest
 
 
 def test_file_locking():
@@ -122,7 +122,7 @@ def test_file_locking():
             return False
 
         print("✅ File locking tests passed!")
-        return True
+        # Test completed successfully - no return needed for pytest
 
 
 def test_shared_rate_limiter():
@@ -167,7 +167,7 @@ def test_shared_rate_limiter():
         coordinator2.unregister_instance()
 
         print("✅ Shared rate limiter tests passed!")
-        return True
+        # Test completed successfully - no return needed for pytest
 
 
 def main():

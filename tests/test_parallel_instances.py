@@ -252,7 +252,11 @@ def test_parallel_execution():
         faiss_dirs = list(temp_path.glob("faiss_index_*"))
         print(f"FAISS index directories created: {len(faiss_dirs)}")
 
-        return len(successful_instances) > 0
+        # Assert that at least one instance succeeded
+        assert len(successful_instances) > 0, (
+            f"Expected at least one successful instance, "
+            f"got {len(successful_instances)} successful out of {num_instances}"
+        )
 
 
 def main():

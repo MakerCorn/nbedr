@@ -295,14 +295,15 @@ class DocumentCoordinator:
             with self._lock_registry():
                 registry = self._load_registry()
 
-                reset_count = 0
-                for file_hash, status in registry.items():
-                    if status.status == "failed":
-                        del registry[file_hash]
-                        reset_count += 1
+                # Find all failed files first to avoid modifying dict during iteration
+                failed_file_hashes = [file_hash for file_hash, status in registry.items() if status.status == "failed"]
+
+                # Remove failed files
+                for file_hash in failed_file_hashes:
+                    del registry[file_hash]
 
                 self._save_registry(registry)
-                logger.info(f"Reset {reset_count} failed files for reprocessing")
+                logger.info(f"Reset {len(failed_file_hashes)} failed files for reprocessing")
 
         except Exception as e:
             logger.error(f"Error resetting failed files: {e}")

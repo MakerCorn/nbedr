@@ -11,6 +11,7 @@ from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
+    HnswParameters,
     SearchField,
     SearchFieldDataType,
     SearchIndex,
@@ -94,12 +95,19 @@ class AzureAISearchVectorStore(BaseVectorStore):
             ]
 
             # Configure vector search
+            hnsw_params = HnswParameters(
+                m=4,
+                ef_construction=400,
+                ef_search=500,
+                metric="cosine"
+            )
+            
             vector_search = VectorSearch(
                 algorithms=[
                     HnswAlgorithmConfiguration(
                         name="content-vector-config",
                         kind=VectorSearchAlgorithmKind.HNSW,
-                        parameters={"m": 4, "efConstruction": 400, "efSearch": 500, "metric": "cosine"},
+                        parameters=hnsw_params,
                     )
                 ],
                 profiles=[
@@ -205,7 +213,7 @@ class AzureAISearchVectorStore(BaseVectorStore):
                     source=result["source"],
                     metadata=metadata,
                     similarity_score=result.get("@search.score", 0.0),
-                    embedding_model=result.get("embedding_model"),
+                    embedding_model=result.get("embedding_model") or "unknown",
                     created_at=result.get("created_at"),
                 )
                 search_results.append(search_result)
@@ -241,11 +249,21 @@ class AzureAISearchVectorStore(BaseVectorStore):
         try:
             # Get index statistics
             index_stats = self.index_client.get_index_statistics(self.index_name)
+            
+            # Handle the case where index_stats might be a MutableMapping
+            if hasattr(index_stats, 'document_count') and hasattr(index_stats, 'storage_size'):
+                document_count = index_stats.document_count
+                storage_size = index_stats.storage_size
+            else:
+                # Fallback for dictionary-like response
+                stats_dict = dict(index_stats) if hasattr(index_stats, 'items') else {}
+                document_count = stats_dict.get('document_count', 0)
+                storage_size = stats_dict.get('storage_size', 0)
 
             return {
                 "index_name": self.index_name,
-                "document_count": index_stats.document_count,
-                "storage_size": index_stats.storage_size,
+                "document_count": document_count,
+                "storage_size": storage_size,
                 "vector_index_size": getattr(index_stats, "vector_index_size", "N/A"),
             }
 
