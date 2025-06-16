@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from core.clients import BaseEmbeddingProvider, EmbeddingResult, create_provider_from_config
 from core.config import EmbeddingConfig
 from core.models import DocumentChunk
