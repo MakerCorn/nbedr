@@ -1,0 +1,14 @@
+security:
+  ignore-vulnerabilities:
+    # Add any false positives or accepted risks here with explanations
+    # Format:
+    # - id: "XXXX"
+    #   reason: "Explanation of why this is being ignored"
+
+  ignore-cvss-severity-below: 7.0  # Only alert on high and critical severity issues
+
+  ignore-python-packages:
+    # Add any packages that should be ignored
+    # Format:
+    # - name: "package-name"
+    #   reason: "Explanation of why this package is being ignored"
