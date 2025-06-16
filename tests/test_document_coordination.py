@@ -301,21 +301,26 @@ class TestMultipleInstanceScenarios:
 
         def try_process_file(instance_id, file_path):
             coordinator = DocumentCoordinator(temp_coordination_dir, instance_id)
-            lock_file = coordinator.lock_dir / f"{file_path.name}.lock"
-            file_lock = FileLock(str(lock_file), timeout=0.5)
 
-            try:
-                with file_lock:
-                    # Check if file is already completed after acquiring lock
+            # First check if we can process the file
+            if not coordinator.can_process_file(file_path):
+                return f"{instance_id} skipped {file_path.name} (cannot process)"
+
+            # Try to acquire the lock
+            if coordinator.acquire_file_lock(file_path):
+                try:
+                    # Double check if file was completed by another instance
                     if coordinator.is_file_completed(file_path):
-                        return f"{instance_id} skipped {file_path.name} (already completed)"
+                        return f"{instance_id} skipped {file_path.name} (completed after lock)"
 
                     # Simulate processing time
                     time.sleep(0.1)
                     coordinator.mark_file_completed(file_path)
                     return f"{instance_id} processed {file_path.name}"
-            except TimeoutError:
-                return f"{instance_id} skipped {file_path.name} (lock timeout)"
+                finally:
+                    coordinator.release_file_lock(file_path)
+
+            return f"{instance_id} skipped {file_path.name} (could not acquire lock)"
 
         # Multiple instances try to process the same file
         test_file = test_files[0]
@@ -347,15 +352,27 @@ class TestMultipleInstanceScenarios:
             processed_files = []
 
             for file_path in all_files:
-                if coordinator.can_process_file(file_path):
+                try:
+                    # First check if we can process this file
+                    if not coordinator.can_process_file(file_path):
+                        continue
+
+                    # Try to acquire the lock
                     if coordinator.acquire_file_lock(file_path):
                         try:
+                            # Double check after acquiring lock
+                            if coordinator.is_file_completed(file_path):
+                                continue
+
                             # Simulate processing
                             time.sleep(0.05)
                             coordinator.mark_file_completed(file_path)
                             processed_files.append(file_path.name)
                         finally:
                             coordinator.release_file_lock(file_path)
+                except Exception as e:
+                    print(f"Error processing {file_path}: {e}")
+                    continue
 
             return processed_files
 
