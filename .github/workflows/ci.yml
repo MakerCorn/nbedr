@@ -37,11 +37,12 @@ jobs:
       fail-fast: false  # Continue with other combinations if one fails
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.11', '3.12', '3.13']
-        exclude:
-          # Exclude some combinations to save CI time
-          - os: macos-latest
-            python-version: '3.13'
+        python-version: ['3.11', '3.12']
+        # Exclude Python 3.13 due to lack of pyarrow wheels and build failures
+        # python-version: ['3.11', '3.12', '3.13']
+        # exclude:
+        #   - os: macos-latest
+        #     python-version: '3.13'
 
     steps:
     - name: Checkout code
