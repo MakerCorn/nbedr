@@ -214,7 +214,7 @@ jobs:
           org.opencontainers.image.description=Neural Bedrock Retrieval
           org.opencontainers.image.vendor=${{ github.repository_owner }}
 
-    - name: Build and push Docker image
+    - name: Build and push Docker image (minimal)
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -225,12 +225,43 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: |
           type=gha
-          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-minimal
         cache-to: |
           type=gha,mode=max
-          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache,mode=max
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-minimal,mode=max
         build-args: |
           BUILDKIT_INLINE_CACHE=1
+          INSTALL_CLOUD=false
+          INSTALL_VECTOR_STORES=false
+          INSTALL_DOCUMENTS=false
+          INSTALL_LOCAL_LLM=false
+          BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+    - name: Build and push Docker image (full features)
+      if: github.ref == 'refs/heads/main'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deployment/docker/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ghcr.io/${{ steps.repo.outputs.name }}:latest-full
+          ghcr.io/${{ steps.repo.outputs.name }}:${{ github.sha }}-full
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: |
+          type=gha
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-full
+        cache-to: |
+          type=gha,mode=max
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-full,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+          INSTALL_CLOUD=true
+          INSTALL_VECTOR_STORES=true
+          INSTALL_DOCUMENTS=true
+          INSTALL_LOCAL_LLM=true
           BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
 

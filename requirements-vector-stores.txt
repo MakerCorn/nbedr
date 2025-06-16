@@ -1,0 +1,17 @@
+# Additional vector database support
+# Install with: pip install -r requirements-minimal.txt -r requirements-vector-stores.txt
+
+# ChromaDB support
+chromadb>=0.4.0,<1.0.0
+
+# Pinecone support
+pinecone-client>=3.0.0,<4.0.0
+
+# Elasticsearch support
+elasticsearch>=8.0.0,<9.0.0
+elasticsearch-dsl>=8.0.0,<9.0.0
+
+# PostgreSQL with pgvector support
+asyncpg>=0.29.0,<1.0.0
+psycopg2-binary>=2.9.0,<3.0.0
+pgvector>=0.2.0,<1.0.0

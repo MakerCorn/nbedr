@@ -1,11 +1,15 @@
 # Optimized multi-stage build for nBedR
 FROM python:3.11-slim AS builder
 
-# Set build arguments
+# Set build arguments for optional features
 ARG BUILD_DATE
 ARG VERSION
 ARG VCS_REF
 ARG BUILDKIT_INLINE_CACHE=1
+ARG INSTALL_CLOUD=false
+ARG INSTALL_VECTOR_STORES=false
+ARG INSTALL_DOCUMENTS=false
+ARG INSTALL_LOCAL_LLM=false
 
 # Set labels
 LABEL org.opencontainers.image.title="nBedR" \
@@ -29,14 +33,43 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt requirements-test.txt ./
+# Copy requirements files for better caching
+COPY requirements-minimal.txt ./
+COPY requirements-cloud.txt ./
+COPY requirements-vector-stores.txt ./
+COPY requirements-documents.txt ./
+COPY requirements-local-llm.txt ./
 
-# Install Python dependencies with pip cache mounting
+# Install minimal dependencies first (always required)
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
-    pip install --only-binary=all -r requirements.txt || \
-    pip install -r requirements.txt
+    pip install --only-binary=:all: -r requirements-minimal.txt || \
+    pip install -r requirements-minimal.txt
+
+# Conditionally install optional features
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ "$INSTALL_CLOUD" = "true" ]; then \
+        pip install --only-binary=:all: -r requirements-cloud.txt || \
+        pip install -r requirements-cloud.txt; \
+    fi
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ "$INSTALL_VECTOR_STORES" = "true" ]; then \
+        pip install --only-binary=:all: -r requirements-vector-stores.txt || \
+        pip install -r requirements-vector-stores.txt; \
+    fi
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ "$INSTALL_DOCUMENTS" = "true" ]; then \
+        pip install --only-binary=:all: -r requirements-documents.txt || \
+        pip install -r requirements-documents.txt; \
+    fi
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ "$INSTALL_LOCAL_LLM" = "true" ]; then \
+        pip install --only-binary=:all: -r requirements-local-llm.txt || \
+        pip install -r requirements-local-llm.txt; \
+    fi
 
 # Production stage
 FROM python:3.11-slim AS production

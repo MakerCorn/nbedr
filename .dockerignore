@@ -104,3 +104,10 @@ scripts/
 Pipfile*
 poetry.lock
 uv.lock
+
+# Keep our requirements files
+!requirements-minimal.txt
+!requirements-cloud.txt
+!requirements-vector-stores.txt
+!requirements-documents.txt
+!requirements-local-llm.txt
