@@ -8,11 +8,11 @@ The nBedR project includes an automated documentation wiki system that publishes
 
 ### Automated Publication
 
-The wiki is automatically updated when:
+The wiki is updated in these controlled scenarios:
 
-1. **Main Branch Pushes**: Documentation changes on the main branch trigger wiki updates
-2. **Releases**: Each release updates the wiki with version-specific information
-3. **Manual Triggers**: You can manually trigger wiki updates via GitHub Actions
+1. **Manual Triggers**: You can manually trigger wiki updates via GitHub Actions workflow dispatch
+2. **Post-Release**: After successful completion of the release workflow
+3. **No Automatic Pushes**: Wiki is NOT updated on every code push to maintain clean CI pipelines
 
 ### Change Detection
 
@@ -94,9 +94,20 @@ graph LR
     B --> C[GitHub Wiki Display]
 ```
 
-## Manual Usage
+## Initial Setup
 
-### Generate Wiki Locally
+### First-Time Wiki Initialization
+
+GitHub Wikis must be manually initialized before automation can take over:
+
+**Steps to initialize:**
+1. Go to `https://github.com/[owner]/[repo]/wiki`
+2. Click "Create the first page" 
+3. Add any initial content (will be replaced by automation)
+4. Save the page
+5. Automation will take over from here!
+
+### Manual Usage (After Initialization)
 
 ```bash
 # Generate all wiki pages
@@ -116,8 +127,9 @@ python scripts/generate-wiki.py --config custom-wiki-config.yaml
 
 1. **Edit Documentation**: Modify files in `docs/`, `README.md`, etc.
 2. **Test Locally**: Run `python scripts/generate-wiki.py` to preview
-3. **Commit Changes**: Push to main branch
-4. **Automatic Publishing**: CI will detect changes and update wiki
+3. **Commit Changes**: Push to main branch (CI runs but no wiki update)
+4. **Manual Publishing**: Use GitHub Actions to manually trigger wiki update
+5. **Release Publishing**: Wiki automatically updates after successful releases
 
 ## Directory Structure
 
@@ -138,9 +150,9 @@ nbedr/
 ### Triggers
 
 The wiki publishing runs when:
-- Files matching these patterns change: `README.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/**`, `deployment/**`, `templates/**`
-- Manual workflow dispatch
-- Release events
+- **Manual workflow dispatch**: Via GitHub Actions UI with optional force update
+- **Successful release completion**: After the release workflow completes successfully
+- **Not on code pushes**: Removed from CI pipeline to keep it fast and focused
 
 ### Workflow Steps
 

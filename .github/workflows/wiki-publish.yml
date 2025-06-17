@@ -1,19 +1,7 @@
 name: Publish Wiki Documentation
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - 'SECURITY.md'
-      - 'docs/**'
-      - 'deployment/**'
-      - 'templates/**'
-      - 'wiki-config.yaml'
-      - 'scripts/generate-wiki.py'
-  
-  # Allow manual triggering
+  # Manual triggering only
   workflow_dispatch:
     inputs:
       force_update:
@@ -21,69 +9,78 @@ on:
         required: false
         default: false
         type: boolean
-
-  # Trigger on releases
-  release:
-    types: [published]
+      update_reason:
+        description: 'Reason for manual wiki update'
+        required: false
+        default: 'Manual documentation update'
+        type: string
+  
+  # Trigger after successful release workflow
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+    branches: [main]
 
 env:
   PYTHON_VERSION: '3.11'
 
 jobs:
-  check-changes:
-    name: Check Documentation Changes
+  check-trigger:
+    name: Determine Wiki Update Trigger
     runs-on: ubuntu-latest
     outputs:
-      has_changes: ${{ steps.check.outputs.has_changes }}
+      should_update: ${{ steps.check.outputs.should_update }}
+      update_reason: ${{ steps.check.outputs.update_reason }}
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 2  # Need previous commit for comparison
+        fetch-depth: 2
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyyaml
-    
-    - name: Check for documentation changes
+    - name: Determine update trigger
       id: check
       run: |
-        # For manual triggers with force_update, always has changes
-        if [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "Force update requested"
+        echo "🔍 Checking wiki update trigger..."
+        
+        # Manual trigger
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "should_update=true" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
+            echo "update_reason=Manual force update: ${{ github.event.inputs.update_reason }}" >> $GITHUB_OUTPUT
+            echo "📝 Manual force update requested"
+          else
+            echo "update_reason=Manual update: ${{ github.event.inputs.update_reason }}" >> $GITHUB_OUTPUT
+            echo "📝 Manual update requested"
+          fi
           exit 0
         fi
         
-        # For releases, always update
-        if [[ "${{ github.event_name }}" == "release" ]]; then
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "Release event detected"
+        # Workflow run (after release)
+        if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+          # Only proceed if the triggering workflow was successful
+          if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            echo "should_update=true" >> $GITHUB_OUTPUT
+            echo "update_reason=Post-release documentation update" >> $GITHUB_OUTPUT
+            echo "📝 Successful release workflow detected - updating wiki"
+          else
+            echo "should_update=false" >> $GITHUB_OUTPUT
+            echo "update_reason=Release workflow failed - skipping wiki update" >> $GITHUB_OUTPUT
+            echo "❌ Release workflow failed - skipping wiki update"
+          fi
           exit 0
         fi
         
-        # Check if documentation files changed
-        if git diff --name-only HEAD~1 HEAD | grep -E "(README\.md|CHANGELOG\.md|SECURITY\.md|docs/|deployment/|templates/|wiki-config\.yaml|scripts/generate-wiki\.py)" > /dev/null; then
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "Documentation changes detected:"
-          git diff --name-only HEAD~1 HEAD | grep -E "(README\.md|CHANGELOG\.md|SECURITY\.md|docs/|deployment/|templates/|wiki-config\.yaml|scripts/generate-wiki\.py)"
-        else
-          echo "has_changes=false" >> $GITHUB_OUTPUT
-          echo "No documentation changes detected"
-        fi
+        # Default: no update
+        echo "should_update=false" >> $GITHUB_OUTPUT
+        echo "update_reason=No qualifying trigger detected" >> $GITHUB_OUTPUT
+        echo "📄 No qualifying trigger for wiki update"
 
   generate-wiki:
     name: Generate Wiki Content
     runs-on: ubuntu-latest
-    needs: check-changes
-    if: needs.check-changes.outputs.has_changes == 'true'
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_update == 'true'
     
     steps:
     - name: Checkout repository
@@ -104,7 +101,16 @@ jobs:
     - name: Generate wiki content
       run: |
         echo "🔧 Generating wiki content..."
-        python scripts/generate-wiki.py --repo-root . --config wiki-config.yaml
+        echo "📝 Update reason: ${{ needs.check-trigger.outputs.update_reason }}"
+        
+        # Use force flag for manual force updates
+        if [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
+          echo "🔄 Force regenerating all wiki pages..."
+          python scripts/generate-wiki.py --repo-root . --config wiki-config.yaml --force
+        else
+          echo "📄 Generating wiki with change detection..."
+          python scripts/generate-wiki.py --repo-root . --config wiki-config.yaml
+        fi
         
         echo "📋 Generated wiki files:"
         ls -la wiki/
@@ -119,8 +125,8 @@ jobs:
   publish-wiki:
     name: Publish to GitHub Wiki
     runs-on: ubuntu-latest
-    needs: [check-changes, generate-wiki]
-    if: needs.check-changes.outputs.has_changes == 'true'
+    needs: [check-trigger, generate-wiki]
+    if: needs.check-trigger.outputs.should_update == 'true'
     
     permissions:
       contents: write  # Required for wiki access
@@ -188,13 +194,13 @@ jobs:
         # Add all changes
         git add .
         
-        # Create commit message
-        if [[ "${{ github.event_name }}" == "release" ]]; then
-          COMMIT_MSG="📖 Update documentation for release ${{ github.event.release.tag_name }}"
+        # Create commit message based on trigger
+        if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+          COMMIT_MSG="📖 Update documentation after successful release"
         elif [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
-          COMMIT_MSG="📖 Force update all wiki documentation"
+          COMMIT_MSG="📖 ${{ needs.check-trigger.outputs.update_reason }}"
         else
-          COMMIT_MSG="📖 Update documentation from commit ${{ github.sha }}"
+          COMMIT_MSG="📖 ${{ needs.check-trigger.outputs.update_reason }}"
         fi
         
         echo "💾 Committing changes: $COMMIT_MSG"
@@ -204,9 +210,9 @@ jobs:
         
         Co-Authored-By: Claude <noreply@anthropic.com>"
         
-        # Push changes
+        # Push changes (GitHub wikis use master branch)
         echo "🚀 Pushing to wiki..."
-        git push origin main
+        git push origin master
         
         echo "✅ Wiki updated successfully!"
     
@@ -218,6 +224,8 @@ jobs:
         echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
         echo "| Wiki URL | https://github.com/${{ github.repository }}/wiki |" >> $GITHUB_STEP_SUMMARY
         echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Reason | ${{ needs.check-trigger.outputs.update_reason }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Force Update | ${{ github.event.inputs.force_update || 'false' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
         
         if [[ "${{ job.status }}" == "success" ]]; then

@@ -455,8 +455,14 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
-        # Clone wiki repository
-        git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.wiki.git" wiki-repo
+        # Try to clone wiki repository
+        if git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.wiki.git" wiki-repo 2>/dev/null; then
+          echo "✅ Wiki repository exists, proceeding with update"
+        else
+          echo "📝 Wiki repository doesn't exist yet - skipping wiki update for release"
+          echo "Initialize the wiki manually first, then future releases will update it automatically"
+          exit 0
+        fi
         
         cd wiki-repo
         
@@ -486,7 +492,7 @@ jobs:
           
           Co-Authored-By: Claude <noreply@anthropic.com>"
           
-          git push origin main
+          git push origin master
           echo "✅ Wiki updated for release!"
         else
           echo "📄 No wiki changes for release"

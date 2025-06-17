@@ -55,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Cross-References**: Proper cross-referencing between wiki pages with footer navigation
   - **Source Attribution**: Clear attribution of auto-generated content with links back to repository
   - **Release Banners**: Special release banners added to Home page during releases
+- **Wiki Publishing Architecture Improvement**: Refactored wiki automation to remove from CI pipeline and use controlled triggers only
+  - **Removed from CI**: Wiki publishing no longer runs on every main branch push, keeping CI fast and focused
+  - **Manual Triggers Only**: Wiki updates via GitHub Actions workflow dispatch with optional force update and custom reason
+  - **Post-Release Updates**: Automatic wiki updates after successful release workflow completion
+  - **Better Performance**: CI pipeline no longer delayed by documentation publishing
+  - **Controlled Publishing**: Documentation updates are now intentional rather than automatic
 
 #### Enhanced Embedding Provider System
 - **New Multi-Provider Architecture**: Comprehensive embedding provider system supporting 7 different providers

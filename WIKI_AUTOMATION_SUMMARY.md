@@ -72,6 +72,19 @@ graph LR
 - ✅ Cross-page navigation footers
 - ✅ Consistent formatting and headers
 
+## 🚀 **Getting Started**
+
+### **First-Time Setup Required**
+
+GitHub Wikis need manual initialization before automation can work:
+
+1. **Create First Page**: Go to GitHub Wiki and create any initial page
+2. **Automation Takes Over**: Future updates are completely automatic
+
+### **Why Manual Initialization?**
+
+GitHub doesn't allow automated creation of Wiki repositories - the first page must be created through the web interface. After that, the automation handles everything.
+
 ## 📊 File Mapping Configuration
 
 ### Source → Wiki Mapping
@@ -136,9 +149,9 @@ python scripts/generate-wiki.py --force
 ```
 
 ### CI/CD Triggers
-- **Automatic**: Push documentation changes to main branch
-- **Manual**: Trigger via GitHub Actions UI
-- **Release**: Automatic on release creation
+- **Manual Only**: Trigger via GitHub Actions workflow dispatch UI
+- **Post-Release**: Automatic after successful release workflow completion
+- **No Auto-Push**: Removed from CI pipeline for better performance
 
 ## 🔍 Quality Assurance
 
