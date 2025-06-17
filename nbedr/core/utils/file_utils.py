@@ -55,7 +55,8 @@ def extract_random_jsonl_rows(file_path, num_rows, output_file):
         lines = infile.readlines()
     if num_rows > len(lines):
         raise ValueError(f"Requested {num_rows} rows, but file only contains {len(lines)} lines.")
-    sampled_lines = random.sample(lines, num_rows)
+    # Using random.sample for data sampling, not cryptographic purposes
+    sampled_lines = random.sample(lines, num_rows)  # nosec B311
     with open(output_file, "w", encoding="utf-8") as outfile:
         outfile.writelines(sampled_lines)
     print(f"Extracted {num_rows} random rows to {output_file}.")
