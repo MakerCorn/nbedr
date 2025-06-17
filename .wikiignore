@@ -1,0 +1,53 @@
+# Wiki generation ignore file
+# Files and patterns to exclude from wiki generation
+
+# Development and CI files
+.git/
+.github/
+*.pyc
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.coverage
+*.log
+
+# Build artifacts
+dist/
+build/
+*.whl
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Internal documentation (too technical for wiki)
+docs/CI_CD_FIX_COMPLETE.md
+docs/DEPENDENCY_FIX_SUMMARY.md
+docs/FINAL_QUALITY_REPORT.md
+docs/AIOHTTP_DEPENDENCY_FIX.md
+docs/MYPY_FIXES.md
+docs/PYTHON_VERSION_UPDATE.md
+docs/RELEASE_SUMMARY.md
+docs/TEST_UPDATES_SUMMARY.md
+docs/TYPE_CHECKING_SUMMARY.md
+
+# Configuration files (should not be in wiki)
+pyproject.toml
+requirements*.txt
+mypy.ini
+uv.lock
+
+# Generated files
+.content-hashes.json
+wiki/

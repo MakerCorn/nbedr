@@ -28,6 +28,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Automated Documentation Wiki System
+- **GitHub Wiki Automation**: Complete automated documentation publishing system that publishes project documentation to GitHub Wiki during CI builds
+  - **Smart Change Detection**: Only updates wiki when documentation files actually change, using content hash comparison
+  - **Automatic Publishing**: Triggers on main branch pushes, releases, and manual workflow dispatch
+  - **Source Mapping**: Maps repository documentation to organized wiki pages (README.md → Home.md, docs/BUILD.md → Build-and-Development.md, etc.)
+  - **Content Consolidation**: Intelligently consolidates deployment/ and templates/ directories into single comprehensive wiki pages
+- **Wiki Generator Script**: Python-based wiki generation system (`scripts/generate-wiki.py`) with comprehensive features
+  - **Link Processing**: Automatically converts relative markdown links to wiki page references
+  - **Table of Contents**: Auto-generates TOCs for long pages (>1000 characters)
+  - **Mermaid Diagram Support**: Processes Mermaid diagrams for GitHub Wiki compatibility
+  - **Navigation Sidebar**: Generates structured navigation sidebar (_Sidebar.md) with organized sections
+  - **Timestamp Integration**: Adds last-updated timestamps and source file references to all pages
+- **Configuration System**: YAML-based configuration (`wiki-config.yaml`) for complete customization
+  - **Page Mapping**: Flexible source-to-wiki page mapping configuration
+  - **Navigation Structure**: Hierarchical navigation organization with sections and subsections
+  - **Content Processing Options**: Configurable link conversion, TOC generation, and Mermaid processing
+  - **Exclusion Rules**: Comprehensive exclusion system for technical/internal documentation
+- **CI/CD Integration**: Seamlessly integrated into existing CI/CD pipelines
+  - **Main Branch Publishing**: Automatic wiki updates on main branch documentation changes
+  - **Release Integration**: Special handling for release documentation with version banners
+  - **Change Detection**: Intelligent git-based change detection to minimize unnecessary updates
+  - **Error Handling**: Comprehensive error handling with detailed logging and failure notifications
+- **Documentation Features**: Professional wiki presentation with enhanced navigation
+  - **Professional Navigation**: Multi-level navigation with Getting Started, Configuration, Deployment, and Maintenance sections
+  - **Cross-References**: Proper cross-referencing between wiki pages with footer navigation
+  - **Source Attribution**: Clear attribution of auto-generated content with links back to repository
+  - **Release Banners**: Special release banners added to Home page during releases
+
 #### Enhanced Embedding Provider System
 - **New Multi-Provider Architecture**: Comprehensive embedding provider system supporting 7 different providers
   - OpenAI (text-embedding-3-small, text-embedding-3-large)

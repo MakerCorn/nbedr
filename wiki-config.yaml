@@ -1,0 +1,104 @@
+# Wiki Configuration
+# Controls how documentation is processed and organized for GitHub Wiki
+
+wiki:
+  title: "nBedR Documentation"
+  description: "RAG Embedding Toolkit - Complete Documentation"
+  
+  # Source to wiki page mapping
+  pages:
+    # Main pages
+    "README.md": "Home.md"
+    "CHANGELOG.md": "Changelog.md"
+    "SECURITY.md": "Security.md"
+    
+    # Documentation pages
+    "docs/BUILD.md": "Build-and-Development.md"
+    "docs/DEVELOPMENT.md": "Development-Guide.md"
+    "docs/MIGRATION_GUIDE.md": "Migration-Guide.md"
+    "docs/DOCKER_BUILD_OPTIMIZATION.md": "Docker-Optimization.md"
+    "docs/DYNAMIC_TAGGING.md": "Dynamic-Tagging.md"
+    "docs/RELEASE_WORKFLOW_VALIDATION.md": "Release-Workflow.md"
+    "docs/SECURITY_FIXES.md": "Security-Fixes.md"
+    "docs/GITHUB_PERMISSIONS_SETUP.md": "GitHub-Permissions.md"
+    "docs/WIKI_DOCUMENTATION.md": "Wiki-System.md"
+    "docs/README_STRUCTURE.md": "README-Guide.md"
+    
+    # Generated pages
+    "deployment/": "Deployment-Guide.md"
+    "templates/": "Templates.md"
+
+  # Navigation structure for sidebar
+  navigation:
+    - title: "Getting Started"
+      pages:
+        - "Home"
+        - "README-Guide"
+        - "Build-and-Development"
+        - "Development-Guide"
+    
+    - title: "Configuration"
+      pages:
+        - "Templates"
+        - "Dynamic-Tagging"
+    
+    - title: "Deployment"
+      pages:
+        - "Deployment-Guide"
+        - "Docker-Optimization"
+        - "GitHub-Permissions"
+    
+    - title: "Maintenance"
+      pages:
+        - "Security"
+        - "Security-Fixes"
+        - "Migration-Guide"
+        - "Release-Workflow"
+        - "Wiki-System"
+        - "Changelog"
+
+  # Content processing options
+  processing:
+    # Convert relative links to wiki links
+    convert_links: true
+    
+    # Generate table of contents for pages longer than this
+    toc_min_length: 1000
+    
+    # Include last updated timestamps
+    include_timestamps: true
+    
+    # Process mermaid diagrams
+    process_mermaid: true
+    
+    # Maximum heading level for TOC
+    max_toc_level: 3
+
+  # Files to exclude from processing
+  exclude:
+    - "docs/CI_CD_FIX_COMPLETE.md"
+    - "docs/DEPENDENCY_FIX_SUMMARY.md"
+    - "docs/FINAL_QUALITY_REPORT.md"
+    - "docs/AIOHTTP_DEPENDENCY_FIX.md"
+    - "docs/MYPY_FIXES.md"
+    - "docs/PYTHON_VERSION_UPDATE.md"
+    - "docs/RELEASE_SUMMARY.md"
+    - "docs/TEST_UPDATES_SUMMARY.md"
+    - "docs/TYPE_CHECKING_SUMMARY.md"
+
+  # Header template for all wiki pages
+  header_template: |
+    <!-- This page is auto-generated from the nBedR repository -->
+    <!-- Last updated: {timestamp} -->
+    <!-- Source: {source_file} -->
+    
+  # Footer template for all wiki pages
+  footer_template: |
+    
+    ---
+    
+    📚 **Navigation**: [Home](Home) | [Development](Development-Guide) | [Deployment](Deployment-Guide) | [Security](Security)
+    
+    🔗 **Links**: [Repository](https://github.com/makercorn/nbedr) | [Issues](https://github.com/makercorn/nbedr/issues) | [Releases](https://github.com/makercorn/nbedr/releases)
+    
+    *Last updated: {timestamp}*
