@@ -30,17 +30,17 @@ spec:
       serviceAccountName: nbedr-service-account
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
       - name: nbedr
         image: ghcr.io/makercorn/nbedr:latest
         imagePullPolicy: IfNotPresent
         securityContext:
           runAsNonRoot: true
-          runAsUser: 1000
-          runAsGroup: 1000
+          runAsUser: 10001
+          runAsGroup: 10001
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:

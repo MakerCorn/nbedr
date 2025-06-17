@@ -32,7 +32,9 @@ secretGenerator:
 
 images:
 - name: nbedr
-  newName: your-account-id.dkr.ecr.us-west-2.amazonaws.com/nbedr
+  newName: ghcr.io/makercorn/nbedr
+  # newTag will be set dynamically by CI/CD pipeline
+  # Example: kustomize edit set image nbedr=ghcr.io/makercorn/nbedr:${GITHUB_SHA}
   newTag: latest
 
 replicas:

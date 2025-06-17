@@ -81,7 +81,7 @@ docker build \
 
 ## CI/CD Integration
 
-The CI workflow builds two variants:
+The CI workflow builds three variants:
 
 ### Branch Builds
 - **Minimal image** only (amd64 platform)
@@ -94,6 +94,11 @@ The CI workflow builds two variants:
 - **Full-featured image**: `ghcr.io/makercorn/nbedr:latest-full`, `ghcr.io/makercorn/nbedr:full`
   - Multi-platform (amd64, arm64) - **Full Mac ARM support**
   - Includes cloud providers, vector stores, document processing, local LLM support
+- **Distroless image**: `ghcr.io/makercorn/nbedr:latest-distroless`, `ghcr.io/makercorn/nbedr:secure`
+  - **Maximum Security** - minimal attack surface with no shell or package manager
+  - Multi-platform (amd64, arm64) 
+  - Based on Google's distroless images
+  - Eliminates system-level CVEs (perl, tar, ncurses, etc.)
 
 ## Performance Improvements
 
@@ -147,6 +152,9 @@ docker run --network host nbedr:local
 # Use the pre-built multi-platform full image
 docker pull ghcr.io/makercorn/nbedr:latest-full
 
+# Or use the secure distroless image
+docker pull ghcr.io/makercorn/nbedr:latest-distroless
+
 # Or build locally for ARM64
 docker build --platform linux/arm64 \
   --build-arg INSTALL_CLOUD=true \
@@ -154,6 +162,22 @@ docker build --platform linux/arm64 \
   --build-arg INSTALL_DOCUMENTS=true \
   --build-arg INSTALL_LOCAL_LLM=true \
   -t nbedr:arm64 .
+```
+
+### Security-Focused Usage
+```bash
+# Maximum security with distroless image
+docker pull ghcr.io/makercorn/nbedr:secure
+
+# Verify image signature (future enhancement)
+# cosign verify ghcr.io/makercorn/nbedr:secure
+
+# Run with security constraints
+docker run --read-only --user 10001:10001 \
+  --tmpfs /tmp \
+  --cap-drop ALL \
+  --security-opt no-new-privileges \
+  ghcr.io/makercorn/nbedr:secure
 ```
 
 ## Migration Guide

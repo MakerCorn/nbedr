@@ -217,6 +217,12 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Generate dynamic tags
+      id: tags
+      run: |
+        chmod +x deployment/scripts/ci-deploy.sh
+        deployment/scripts/ci-deploy.sh
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -227,6 +233,8 @@ jobs:
           type=ref,event=pr
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
         labels: |
           org.opencontainers.image.title=nbedr
           org.opencontainers.image.description=Neural Bedrock Retrieval
@@ -239,7 +247,7 @@ jobs:
         file: ./deployment/docker/Dockerfile
         platforms: ${{ github.ref == 'refs/heads/main' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
         push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ steps.tags.outputs.minimal-tags || steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: |
           type=gha
@@ -281,10 +289,7 @@ jobs:
         file: ./deployment/docker/Dockerfile
         platforms: linux/amd64,linux/arm64  # Multi-platform for Mac ARM support
         push: true
-        tags: |
-          ghcr.io/${{ steps.repo.outputs.name }}:latest-full
-          ghcr.io/${{ steps.repo.outputs.name }}:${{ github.sha }}-full
-          ghcr.io/${{ steps.repo.outputs.name }}:full
+        tags: ${{ steps.tags.outputs.full-tags || format('ghcr.io/{0}:latest-full,ghcr.io/{0}:{1}-full,ghcr.io/{0}:full', steps.repo.outputs.name, github.sha) }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: |
           type=gha
@@ -292,6 +297,32 @@ jobs:
         cache-to: |
           type=gha,mode=max
           type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-full,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+          INSTALL_CLOUD=true
+          INSTALL_VECTOR_STORES=true
+          INSTALL_DOCUMENTS=true
+          INSTALL_LOCAL_LLM=true
+          INSTALL_HEAVY=false
+          BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+    - name: Build and push Docker image (distroless - secure)
+      if: github.ref == 'refs/heads/main'
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deployment/docker/Dockerfile.distroless
+        platforms: linux/amd64,linux/arm64  # Multi-platform for Mac ARM support
+        push: true
+        tags: ${{ steps.tags.outputs.distroless-tags || format('ghcr.io/{0}:latest-distroless,ghcr.io/{0}:{1}-distroless,ghcr.io/{0}:distroless,ghcr.io/{0}:secure', steps.repo.outputs.name, github.sha) }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: |
+          type=gha
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-distroless
+        cache-to: |
+          type=gha,mode=max
+          type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache-distroless,mode=max
         build-args: |
           BUILDKIT_INLINE_CACHE=1
           INSTALL_CLOUD=true

@@ -1,0 +1,119 @@
+# Container ignore file for security and efficiency
+# Exclude files that should not be included in container builds
+
+# Development and testing files
+.git/
+.github/
+tests/
+test_*/
+**/test_*
+**/*_test.py
+pytest.ini
+.pytest_cache/
+coverage.xml
+htmlcov/
+.coverage
+.mypy_cache/
+.tox/
+
+# Documentation and README files
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+LICENSE*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Local configuration and secrets
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+config.local.yaml
+secrets.yaml
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Deployment specific files
+deployment/kubernetes/*/secrets/
+deployment/terraform/
+deployment/ansible/
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Backup and temporary files
+*.bak
+*.tmp
+*.temp
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Security scanning results
+bandit-report.json
+safety-report.json
+trivy-results.json
+
+# Package manager files (keep requirements for Docker builds)
+package-lock.json
+yarn.lock
+Pipfile.lock
+
+# Local development databases
+*.db
+*.sqlite
+*.sqlite3

@@ -1,0 +1,230 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+      cloud_provider:
+        description: 'Cloud provider'
+        required: true
+        default: 'gke'
+        type: choice
+        options:
+        - gke
+        - eks
+        - aks
+      image_tag:
+        description: 'Image tag to deploy (leave empty for auto-detection)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Perform dry run'
+        required: false
+        default: false
+        type: boolean
+
+  push:
+    branches: [ main, develop ]
+    paths:
+    - 'deployment/kubernetes/**'
+
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+    - 'deployment/kubernetes/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment || 'staging' }}
+    
+    permissions:
+      contents: read
+      packages: read
+      id-token: write  # For OIDC authentication
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for proper tag detection
+
+    - name: Set lowercase repository name
+      id: repo
+      run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+    - name: Determine deployment parameters
+      id: params
+      run: |
+        # Set environment (from input or auto-detect)
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          ENVIRONMENT="${{ inputs.environment }}"
+          CLOUD_PROVIDER="${{ inputs.cloud_provider }}"
+          DRY_RUN="${{ inputs.dry_run }}"
+        elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          ENVIRONMENT="staging"
+          CLOUD_PROVIDER="gke"
+          DRY_RUN="false"
+        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          ENVIRONMENT="development"
+          CLOUD_PROVIDER="gke"
+          DRY_RUN="false"
+        else
+          ENVIRONMENT="development"
+          CLOUD_PROVIDER="gke"
+          DRY_RUN="true"
+        fi
+        
+        echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+        echo "cloud-provider=${CLOUD_PROVIDER}" >> $GITHUB_OUTPUT
+        echo "dry-run=${DRY_RUN}" >> $GITHUB_OUTPUT
+
+    - name: Generate dynamic image tag
+      id: image
+      run: |
+        chmod +x deployment/scripts/ci-deploy.sh
+        
+        # If image tag provided via input, use it
+        if [[ -n "${{ inputs.image_tag }}" ]]; then
+          IMAGE_TAG="${{ inputs.image_tag }}"
+        else
+          # Auto-generate based on Git context
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            IMAGE_TAG="${{ github.ref_name }}"
+          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+            IMAGE_TAG="main-$(echo ${{ github.sha }} | cut -c1-8)"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            IMAGE_TAG="develop-$(echo ${{ github.sha }} | cut -c1-8)"
+          else
+            BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+            IMAGE_TAG="${BRANCH_NAME}-$(echo ${{ github.sha }} | cut -c1-8)"
+          fi
+        fi
+        
+        # Select image variant based on environment
+        case "${{ steps.params.outputs.environment }}" in
+          production)
+            FINAL_TAG="${IMAGE_TAG}-distroless"
+            ;;
+          staging)
+            FINAL_TAG="${IMAGE_TAG}-full"
+            ;;
+          *)
+            FINAL_TAG="${IMAGE_TAG}"
+            ;;
+        esac
+        
+        echo "tag=${FINAL_TAG}" >> $GITHUB_OUTPUT
+        echo "full-image=ghcr.io/${{ steps.repo.outputs.name }}:${FINAL_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Validate image exists
+      run: |
+        echo "Validating image: ${{ steps.image.outputs.full-image }}"
+        
+        # Use docker buildx imagetools to check if image exists
+        if docker buildx imagetools inspect "${{ steps.image.outputs.full-image }}" >/dev/null 2>&1; then
+          echo "✅ Image exists and is accessible"
+        else
+          echo "❌ Image not found: ${{ steps.image.outputs.full-image }}"
+          echo "Available tags for repository:"
+          # Try to list available tags (this might fail for private repos)
+          docker buildx imagetools inspect ghcr.io/${{ steps.repo.outputs.name }} --raw 2>/dev/null || echo "Could not list available tags"
+          exit 1
+        fi
+
+    - name: Setup Kubernetes tools
+      run: |
+        # Install kubectl
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+        
+        # Install kustomize
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+
+    - name: Configure cloud authentication
+      run: |
+        case "${{ steps.params.outputs.cloud-provider }}" in
+          gke)
+            echo "Configuring GKE authentication..."
+            # Add GKE authentication steps here
+            echo "GKE_CLUSTER_NAME=${{ vars.GKE_CLUSTER_NAME }}" >> $GITHUB_ENV
+            echo "GKE_ZONE=${{ vars.GKE_ZONE }}" >> $GITHUB_ENV
+            ;;
+          eks)
+            echo "Configuring EKS authentication..."
+            # Add EKS authentication steps here
+            echo "EKS_CLUSTER_NAME=${{ vars.EKS_CLUSTER_NAME }}" >> $GITHUB_ENV
+            echo "AWS_REGION=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+            ;;
+          aks)
+            echo "Configuring AKS authentication..."
+            # Add AKS authentication steps here
+            echo "AKS_CLUSTER_NAME=${{ vars.AKS_CLUSTER_NAME }}" >> $GITHUB_ENV
+            echo "AKS_RESOURCE_GROUP=${{ vars.AKS_RESOURCE_GROUP }}" >> $GITHUB_ENV
+            ;;
+        esac
+
+    - name: Deploy to Kubernetes
+      run: |
+        export ENVIRONMENT="${{ steps.params.outputs.environment }}"
+        export CLOUD_PROVIDER="${{ steps.params.outputs.cloud-provider }}"
+        export IMAGE_TAG="${{ steps.image.outputs.tag }}"
+        export DRY_RUN="${{ steps.params.outputs.dry-run }}"
+        export NAMESPACE="nbedr-${{ steps.params.outputs.environment }}"
+        
+        echo "🚀 Deploying to Kubernetes..."
+        echo "Environment: $ENVIRONMENT"
+        echo "Cloud Provider: $CLOUD_PROVIDER"
+        echo "Image: ${{ steps.image.outputs.full-image }}"
+        echo "Namespace: $NAMESPACE"
+        echo "Dry Run: $DRY_RUN"
+        
+        # Use our deployment script
+        chmod +x deployment/scripts/deploy.sh
+        deployment/scripts/deploy.sh
+
+    - name: Run post-deployment tests
+      if: steps.params.outputs.dry-run == 'false'
+      run: |
+        echo "Running post-deployment verification..."
+        
+        NAMESPACE="nbedr-${{ steps.params.outputs.environment }}"
+        
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/nbedr-deployment -n "$NAMESPACE"
+        
+        # Check pod status
+        kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=nbedr
+        
+        # Run basic health check
+        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl:latest -n "$NAMESPACE" -- \
+          curl -f "http://nbedr-service:8080/health" || echo "Health check endpoint not available"
+
+    - name: Deployment summary
+      if: always()
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Environment | ${{ steps.params.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Cloud Provider | ${{ steps.params.outputs.cloud-provider }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Image | ${{ steps.image.outputs.full-image }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Namespace | nbedr-${{ steps.params.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Dry Run | ${{ steps.params.outputs.dry-run }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY

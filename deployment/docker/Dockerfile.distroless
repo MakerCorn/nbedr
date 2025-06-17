@@ -1,4 +1,7 @@
-# Optimized multi-stage build for nBedR
+# Distroless multi-stage build for nBedR - minimal attack surface
+# This eliminates most system-level CVEs by using a minimal base image
+
+# Builder stage with full build environment
 FROM python:3.11-slim-bookworm AS builder
 
 # Set build arguments for optional features
@@ -111,6 +114,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         echo "Skipping heavy dependencies (INSTALL_HEAVY=$INSTALL_HEAVY)"; \
     fi
 
+# Copy application files
+COPY nbedr/ ./nbedr/
+COPY nbedr.py ./
+COPY pyproject.toml ./
+
 # Verify installation by testing core imports
 RUN echo "Verifying installation..." && \
     python -c "import openai; print('✓ OpenAI imported successfully')" && \
@@ -119,10 +127,8 @@ RUN echo "Verifying installation..." && \
     python -c "import numpy; print('✓ NumPy imported successfully')" && \
     echo "✓ All core dependencies verified"
 
-# Remove vulnerable packages and clean up build artifacts to save space
-RUN echo "Removing vulnerable packages..." && \
-    apt-get remove -y perl perl-base tar ncurses-base ncurses-bin util-linux 2>/dev/null || true && \
-    echo "Cleaning up build artifacts..." && \
+# Clean up build artifacts and caches to save space
+RUN echo "Cleaning up build artifacts..." && \
     find /usr/local -name '*.pyc' -delete && \
     find /usr/local -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true && \
     rm -rf /tmp/* /var/tmp/* && \
@@ -130,56 +136,40 @@ RUN echo "Removing vulnerable packages..." && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Production stage
-FROM python:3.11-slim-bookworm AS production
+# Distroless production stage - MINIMAL ATTACK SURFACE
+FROM gcr.io/distroless/python3-debian12:latest AS production
 
-# Install runtime dependencies with security updates and remove vulnerable packages
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    && apt-get remove -y perl perl-base tar ncurses-base ncurses-bin util-linux 2>/dev/null || true \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+# Create directories that our application needs
+# Note: distroless doesn't have shell commands, so we prepare everything in builder
+COPY --from=builder --chown=10001:10001 /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=10001:10001 /usr/local/bin /usr/local/bin
 
-# Create non-root user with high UID for security compliance
-RUN groupadd -r -g 10001 nbedr && useradd -r -u 10001 -g nbedr nbedr
+# Copy only necessary application files
+COPY --from=builder --chown=10001:10001 /app/nbedr ./nbedr
+COPY --from=builder --chown=10001:10001 /app/nbedr.py ./nbedr.py
+COPY --from=builder --chown=10001:10001 /app/pyproject.toml ./pyproject.toml
 
-# Set working directory
-WORKDIR /app
-
-# Copy Python packages from builder (more efficient)
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-# Copy only necessary application files (exclude tests, docs, etc.)
-COPY nbedr/ ./nbedr/
-COPY nbedr.py ./
-COPY pyproject.toml ./
-COPY README.md ./
-COPY CHANGELOG.md ./
-
-# Create necessary directories with proper permissions for high UID user
-RUN mkdir -p /app/data /app/output /app/logs /tmp/nbedr_coordination && \
-    chown -R 10001:10001 /app /tmp/nbedr_coordination
+# Create necessary directories manually since we can't use mkdir in distroless
+# These will be created as volumes or by the application itself
+# The application needs to handle directory creation gracefully
 
 # Set environment variables
-ENV PYTHONPATH=/app \
+ENV PYTHONPATH=/ \
     PYTHONUNBUFFERED=1 \
     NBEDR_COORDINATION_DIR=/tmp/nbedr_coordination \
     NBEDR_LOG_LEVEL=INFO
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python3 nbedr.py status || exit 1
+# Distroless images run as non-root by default
+# We'll override to use our specific high UID for security compliance
+USER 10001:10001
 
-# Switch to non-root user
-USER nbedr
+# Health check via Python execution (no shell available)
+# Note: Distroless doesn't support traditional HEALTHCHECK
+# This will need to be handled by Kubernetes probes
 
 # Expose port for potential web interface
 EXPOSE 8080
 
-# Default command
+# Default command - note: no shell available, direct Python execution
 ENTRYPOINT ["python3", "nbedr.py"]
 CMD ["--help"]

@@ -10,6 +10,26 @@ spec:
         kubernetes.io/arch: amd64
       containers:
       - name: nbedr
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          runAsGroup: 10001
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: nbedr-data
+          mountPath: /app/data
+        - name: nbedr-output
+          mountPath: /app/output
+        - name: nbedr-logs
+          mountPath: /app/logs
         env:
         - name: AZURE_STORAGE_ACCOUNT
           valueFrom:
@@ -48,3 +68,12 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2000m"
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: nbedr-data
+        emptyDir: {}
+      - name: nbedr-output
+        emptyDir: {}
+      - name: nbedr-logs
+        emptyDir: {}

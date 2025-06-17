@@ -63,16 +63,16 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 999
-        runAsGroup: 999
-        fsGroup: 999
+        runAsUser: 10002
+        runAsGroup: 10002
+        fsGroup: 10002
       containers:
       - name: postgres
-        image: pgvector/pgvector:pg16
+        image: docker.io/pgvector/pgvector:0.8.0-pg16
         securityContext:
           runAsNonRoot: true
-          runAsUser: 999
-          runAsGroup: 999
+          runAsUser: 10002
+          runAsGroup: 10002
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
