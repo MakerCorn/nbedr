@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nbedr"
-version = "1.1.0"
+version = "1.1.1"
 description = "nBedR - RAG Embedding Toolkit - Tools for creating and managing embedding databases for Retrieval Augmented Generation"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -144,7 +144,7 @@ skip_glob = [
 ]
 
 [tool.mypy]
-python_version = "1.1.0"
+python_version = "1.1.1"
 warn_return_any = true
 warn_unused_configs = false
 disallow_untyped_defs = false
@@ -183,7 +183,7 @@ module = [
 disable_error_code = ["misc", "assignment"]
 
 [tool.pytest.ini_options]
-minversion = "1.1.0"
+minversion = "1.1.1"
 addopts = "-ra -q --strict-markers --strict-config"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
