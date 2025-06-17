@@ -128,48 +128,69 @@ jobs:
         python << 'EOF'
         import re
         import sys
+        import os
         
         try:
             with open('CHANGELOG.md', 'r') as f:
                 content = f.read()
             
-            # Find the section for the current version (unreleased changes)
-            # Look for the first version section (could be dated or TBD)
+            # Find the section for unreleased changes (first section)
+            # Look for ## [Unreleased] - TBD or similar pattern
             pattern = r'^## \[(.*?)\] - (.*?)$'
             matches = list(re.finditer(pattern, content, re.MULTILINE))
             
             if matches:
-                # Get content from start of first version section to start of next
-                start_pos = matches[0].start()
+                # Get content from end of first header to start of next section or end of file
+                first_match = matches[0]
+                start_pos = first_match.end()  # Start after the header line
+                
                 if len(matches) > 1:
+                    # Find next section header
                     end_pos = matches[1].start()
                     changelog_section = content[start_pos:end_pos].strip()
                 else:
+                    # Use rest of file
                     changelog_section = content[start_pos:].strip()
                 
-                # Clean up the section - remove the header line
-                lines = changelog_section.split('\n')
-                if lines and lines[0].startswith('## ['):
-                    lines = lines[1:]  # Remove version header
-                
-                # Join back and clean up
-                changelog_content = '\n'.join(lines).strip()
-                
-                # Escape newlines for GitHub output
-                changelog_content = changelog_content.replace('\n', '\\n').replace('\r', '\\r')
-                
-                with open("$GITHUB_OUTPUT", "a") as f:
-                    f.write(f"content={changelog_content}\n")
+                # Clean up the content
+                if changelog_section:
+                    # Remove extra whitespace and empty lines at start/end
+                    lines = changelog_section.split('\n')
+                    # Remove leading empty lines
+                    while lines and not lines[0].strip():
+                        lines.pop(0)
+                    # Remove trailing empty lines
+                    while lines and not lines[-1].strip():
+                        lines.pop()
                     
-                print("Extracted changelog content successfully")
+                    changelog_content = '\n'.join(lines)
+                    
+                    # Escape content for GitHub Actions output
+                    # Handle multiline content properly
+                    escaped_content = changelog_content.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+                    
+                    # Write to GitHub output using environment file method for multiline
+                    delimiter = "EOF_CHANGELOG"
+                    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                        f.write(f"content<<{delimiter}\n")
+                        f.write(changelog_content)
+                        f.write(f"\n{delimiter}\n")
+                    
+                    print(f"Extracted changelog content: {len(changelog_content)} characters")
+                    print("Preview:")
+                    print(changelog_content[:200] + "..." if len(changelog_content) > 200 else changelog_content)
+                else:
+                    print("No content found in changelog section")
+                    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                        f.write("content=No changelog content available\n")
             else:
                 print("No changelog sections found")
-                with open("$GITHUB_OUTPUT", "a") as f:
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                     f.write("content=No changelog content available\n")
                     
         except Exception as e:
             print(f"Error extracting changelog: {e}", file=sys.stderr)
-            with open("$GITHUB_OUTPUT", "a") as f:
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                 f.write("content=Error extracting changelog content\n")
         EOF
 
