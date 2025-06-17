@@ -131,16 +131,16 @@ class WikiGenerator:
         if not self.config["wiki"]["processing"]["process_mermaid"]:
             return content
 
-        # GitHub Wiki supports Mermaid, but let's ensure proper formatting
+        # GitHub Wiki supports Mermaid natively, so we just ensure proper formatting
+        # without modifying the diagram content itself
         def mermaid_replacer(match):
-            diagram_type = match.group(1) if match.group(1) else "graph"
-            diagram_content = match.group(2)
+            diagram_content = match.group(1)
 
-            # Ensure proper mermaid code block format
-            return f"```mermaid\n{diagram_type}\n{diagram_content}\n```"
+            # Return the mermaid block with proper formatting, preserving original content
+            return f"```mermaid\n{diagram_content.strip()}\n```"
 
-        # Match mermaid blocks
-        content = re.sub(r"```mermaid\s*\n?([a-zA-Z]+)?\s*\n(.*?)\n```", mermaid_replacer, content, flags=re.DOTALL)
+        # Match mermaid blocks and preserve their content exactly
+        content = re.sub(r"```mermaid\s*\n(.*?)\n```", mermaid_replacer, content, flags=re.DOTALL)
 
         return content
 
@@ -279,16 +279,17 @@ class WikiGenerator:
         processed_content = self._process_links(content, source_path)
         processed_content = self._process_mermaid(processed_content)
 
-        # Add table of contents if needed
-        toc = self._generate_toc(processed_content)
-        if toc:
-            # Insert TOC after the first heading
-            lines = processed_content.split("\n")
-            for i, line in enumerate(lines):
-                if line.startswith("# "):
-                    lines.insert(i + 1, "\n" + toc)
-                    break
-            processed_content = "\n".join(lines)
+        # Add table of contents if needed (but skip for Home page to avoid duplication)
+        if source_path != "README.md":  # Skip auto-TOC for Home page
+            toc = self._generate_toc(processed_content)
+            if toc:
+                # Insert TOC after the first heading
+                lines = processed_content.split("\n")
+                for i, line in enumerate(lines):
+                    if line.startswith("# "):
+                        lines.insert(i + 1, "\n" + toc)
+                        break
+                processed_content = "\n".join(lines)
 
         # Add header and footer
         timestamp = self._get_timestamp()
