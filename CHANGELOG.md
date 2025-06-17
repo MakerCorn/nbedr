@@ -5,7 +5,7 @@ All notable changes to the RAG Embeddings Database project will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.1] - 2025-06-17
+## [1.1.2] - 2025-06-17
 
 ### Fixed
 - **Document Coordination Race Condition**: Fixed race condition in `DocumentCoordinator.acquire_file_lock()` method where multiple instances could acquire locks for the same file simultaneously, leading to duplicate processing. The fix uses atomic file creation with exclusive open mode ('x') to ensure only one instance can acquire a lock at a time.
