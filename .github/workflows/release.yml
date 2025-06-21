@@ -377,7 +377,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     needs: [version-bump, build-and-release]
-    if: ${{ !github.event.inputs.draft && !github.event.inputs.prerelease }}
+    if: ${{ needs.build-and-release.result == 'success' && !github.event.inputs.draft && !github.event.inputs.prerelease }}
     environment: pypi
 
     steps:
@@ -400,12 +400,20 @@ jobs:
       run: |
         python -m build
 
+    - name: Verify package contents
+      run: |
+        echo "📦 Built packages:"
+        ls -la dist/
+        echo "📝 Package contents:"
+        twine check dist/*
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         verbose: true
+        print-hash: true
 
   publish-release-wiki:
     name: Publish Release Wiki
