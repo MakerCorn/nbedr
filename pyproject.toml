@@ -95,9 +95,9 @@ all = [
 nbedr = "nbedr.cli.main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/your-org/nbedr"
-"Bug Reports" = "https://github.com/your-org/nbedr/issues"
-"Source" = "https://github.com/your-org/nbedr"
+"Homepage" = "https://visland.com"
+"Bug Reports" = "https://github.com/makercorn/nbedr/issues"
+"Source" = "https://github.com/makercorn/nbedr"
 
 [tool.setuptools.packages.find]
 include = ["nbedr*"]

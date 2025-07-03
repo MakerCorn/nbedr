@@ -199,12 +199,14 @@ export MAX_WORKERS=4
 #### Quick Provider Setup
 
 **OpenAI:**
+
 ```bash
 export OPENAI_API_KEY="your-api-key"
 export OPENAI_ORGANIZATION="your-org-id"  # Optional
 ```
 
 **Pinecone:**
+
 ```bash
 export PINECONE_API_KEY="your-api-key"
 export PINECONE_ENVIRONMENT="your-environment"
@@ -212,6 +214,7 @@ export PINECONE_INDEX_NAME="your-index"
 ```
 
 **ChromaDB:**
+
 ```bash
 export CHROMA_HOST="localhost"
 export CHROMA_PORT=8000
@@ -228,6 +231,7 @@ This section covers advanced configuration options for production deployments, p
 Rate limiting is configured separately for embedding providers and vector databases to prevent API quota exhaustion and optimize performance:
 
 **Embedding Providers:**
+
 ```env
 # Enable rate limiting for embedding providers
 RATE_LIMIT_ENABLED=true
@@ -238,6 +242,7 @@ RATE_LIMIT_MAX_BURST=100
 ```
 
 **Vector Databases:**
+
 ```env
 # Enable rate limiting for vector store operations
 VECTOR_STORE_RATE_LIMIT_ENABLED=true
@@ -262,22 +267,26 @@ nBedR includes optimized presets for popular services:
 #### Best Practices for Rate Limiting Configuration
 
 **For Production Workloads:**
+
 - Use `sliding_window` strategy for accuracy
 - Set rates to 80% of your actual limits
 - Enable burst handling for peak loads
 - Monitor rate limit statistics regularly
 
 **For Development:**
+
 - Use `conservative` preset for safety
 - Enable detailed logging for debugging
 - Test with small document sets first
 
 **For High-Volume Processing:**
+
 - Use `adaptive` strategy for auto-tuning
 - Configure multiple workers with shared rate limits
 - Monitor response times and adjust accordingly
 
 **Cost Optimization:**
+
 - Set token limits to control embedding costs
 - Use local providers for development
 - Batch documents efficiently to minimize API calls
@@ -299,6 +308,7 @@ This section covers advanced configuration options for power users who need fine
 #### Rate Limiting Configuration Examples
 
 **Conservative Setup (Safe for Testing):**
+
 ```env
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_STRATEGY=sliding_window
@@ -308,6 +318,7 @@ RATE_LIMIT_MAX_BURST=10
 ```
 
 **Production Setup (OpenAI Tier 1):**
+
 ```env
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_STRATEGY=sliding_window
@@ -318,6 +329,7 @@ RATE_LIMIT_TARGET_RESPONSE_TIME=2.0
 ```
 
 **High-Volume Setup (Adaptive):**
+
 ```env
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_STRATEGY=adaptive
@@ -357,16 +369,19 @@ When processing thousands of documents, a single instance can become a bottlenec
 nBedR automatically coordinates multiple instances to prevent conflicts:
 
 **Conflict Detection:**
+
 - Detects when multiple instances would write to the same output paths
 - Prevents concurrent access to the same vector database files
 - Validates configuration compatibility between instances
 
 **Automatic Path Separation:**
+
 - Generates instance-specific output directories
 - Creates separate vector database paths for each instance
 - Ensures no file conflicts between concurrent instances
 
 **Resource Coordination:**
+
 - Distributes rate limits fairly across all running instances
 - Coordinates API quota usage to prevent rate limit violations
 - Shares performance metrics for optimal load balancing
@@ -374,6 +389,7 @@ nBedR automatically coordinates multiple instances to prevent conflicts:
 #### Running Multiple Instances
 
 **Basic Parallel Deployment:**
+
 ```bash
 # Terminal 1 - Instance 1
 nbedr create-embeddings --datapath ./docs1 --output ./output1
@@ -386,6 +402,7 @@ nbedr create-embeddings --datapath ./docs3 --output ./output3
 ```
 
 **Shared Dataset Processing:**
+
 ```bash
 # All instances process the same dataset with automatic coordination
 # Instance paths are automatically separated
@@ -401,6 +418,7 @@ nbedr create-embeddings --datapath ./large_dataset
 ```
 
 **Custom Instance Configuration:**
+
 ```bash
 # Disable coordination for specific use cases
 nbedr create-embeddings --disable-coordination --datapath ./docs
@@ -415,12 +433,14 @@ nbedr create-embeddings --instance-id my-custom-instance --datapath ./docs
 #### Instance Management
 
 **Monitor Active Instances:**
+
 ```bash
 # List all running instances
 nbedr create-embeddings --list-instances
 ```
 
 **Environment Variables for Coordination:**
+
 ```env
 # Disable coordination system
 NBEDR_DISABLE_COORDINATION=true
@@ -437,14 +457,17 @@ NBEDR_HEARTBEAT_INTERVAL=60
 When multiple instances run simultaneously, rate limits are automatically distributed:
 
 **Single Instance:**
+
 - 500 requests per minute → 500 RPM for the instance
 
 **Three Instances:**
+
 - 500 requests per minute → 166 RPM per instance (500/3)
 - Prevents collective rate limit violations
 - Ensures fair resource distribution
 
 **Manual Rate Limit Override:**
+
 ```env
 # Set per-instance rate limits manually
 RATE_LIMIT_REQUESTS_PER_MINUTE=100
@@ -454,21 +477,25 @@ RATE_LIMIT_TOKENS_PER_MINUTE=50000
 #### Best Practices for Parallel Processing
 
 **Data Organization:**
+
 - Split large datasets into balanced chunks for each instance
 - Use different source directories to avoid file locking conflicts
 - Consider document types and sizes when distributing work
 
 **Resource Planning:**
+
 - Monitor CPU usage - optimal is typically 2-4 instances per CPU core
 - Watch memory consumption - each instance loads its own models
 - Consider network bandwidth for API-heavy operations
 
 **Error Handling:**
+
 - Each instance fails independently without affecting others
 - Use consistent configuration across all instances
 - Monitor logs from all instances for comprehensive debugging
 
 **Production Deployment:**
+
 ```bash
 # Use process managers like systemd or supervisor
 systemctl start nbedr-instance-1
@@ -486,24 +513,28 @@ docker run -d nbedr:latest --datapath /data/batch3
 **Common Issues:**
 
 1. **Path Conflicts**
+
    ```bash
    # Error: Multiple instances writing to same path
    # Solution: Use automatic coordination or specify different paths
    ```
 
 2. **Rate Limit Violations**
+
    ```bash
    # Error: Combined instances exceed API limits
    # Solution: Reduce per-instance rate limits or number of instances
    ```
 
 3. **Vector Database Locks**
+
    ```bash
    # Error: FAISS index file locked
    # Solution: Ensure each instance uses separate index paths
    ```
 
 **Debugging Commands:**
+
 ```bash
 # Check active instances
 nbedr create-embeddings --list-instances
@@ -526,6 +557,7 @@ For detailed vector database configuration options and selection guidance, see t
 ### Advanced Chunking Strategies
 
 For detailed chunking configuration and optimization, see the [Understanding Chunking section](#understanding-chunking-the-art-of-breaking-down-documents) below.
+
 ## Architecture
 
 ```mermaid
@@ -587,6 +619,7 @@ python nbedr.py search \
 ### 💻 **Programmatic Integration Examples**
 
 #### **Simple RAG Pipeline**
+
 ```python
 from core.vector_stores import FAISSVectorStore
 from core.clients import create_provider_from_config
@@ -619,6 +652,7 @@ async def answer_question(question: str) -> str:
 ```
 
 #### **Chatbot Integration**
+
 ```python
 import asyncio
 from typing import List, Dict
@@ -661,6 +695,7 @@ class RAGChatbot:
 ```
 
 #### **Batch Document Processing**
+
 ```python
 async def process_user_queries(queries: List[str]) -> List[Dict]:
     """Process multiple queries efficiently"""
@@ -693,6 +728,7 @@ async def process_user_queries(queries: List[str]) -> List[Dict]:
 ### 🎯 **Database-Specific Usage**
 
 #### **FAISS (Local)**
+
 ```python
 # Load and search FAISS index
 from core.vector_stores import FAISSVectorStore
@@ -704,6 +740,7 @@ results = await store.search(query_embedding, top_k=10)
 ```
 
 #### **Pinecone (Cloud)**
+
 ```python
 # Search Pinecone index
 from core.vector_stores import PineconeVectorStore
@@ -722,6 +759,7 @@ results = await store.search(
 ```
 
 #### **PGVector (SQL)**
+
 ```python
 # Combine vector search with SQL queries
 from core.vector_stores import PGVectorStore
@@ -744,6 +782,7 @@ results = await store.search(
 ### 🔧 **Advanced Usage Patterns**
 
 #### **Hybrid Search (Keyword + Semantic)**
+
 ```python
 async def hybrid_search(query: str, keywords: List[str]) -> List[Dict]:
     # Semantic search
@@ -763,6 +802,7 @@ async def hybrid_search(query: str, keywords: List[str]) -> List[Dict]:
 ```
 
 #### **Contextual Chunk Assembly**
+
 ```python
 async def get_expanded_context(query: str, expand_chunks: int = 2) -> str:
     # Find relevant chunks
@@ -789,6 +829,7 @@ async def get_expanded_context(query: str, expand_chunks: int = 2) -> str:
 ### 📊 **Performance Optimization**
 
 #### **Embedding Caching**
+
 ```python
 from functools import lru_cache
 import hashlib
@@ -813,6 +854,7 @@ class CachedEmbeddingProvider:
 ### 🎨 **Integration with Popular Frameworks**
 
 #### **LangChain Integration**
+
 ```python
 from langchain.embeddings.base import Embeddings
 from langchain.vectorstores import VectorStore
@@ -849,6 +891,7 @@ pip install -e .[cloud,dev]
 ### Basic Usage
 
 1. **Create embeddings from local documents:**
+
 ```bash
 python nbedr.py create-embeddings \
     --source local \
@@ -858,6 +901,7 @@ python nbedr.py create-embeddings \
 ```
 
 2. **Process documents from S3:**
+
 ```bash
 python nbedr.py create-embeddings \
     --source s3 \
@@ -867,6 +911,7 @@ python nbedr.py create-embeddings \
 ```
 
 3. **Use Azure AI Search:**
+
 ```bash
 python nbedr.py create-embeddings \
     --source local \
@@ -876,7 +921,8 @@ python nbedr.py create-embeddings \
     --azure-search-index rag-embeddings
 ```
 
-4. **Use AWS Elasticsearch:**
+1. **Use AWS Elasticsearch:**
+
 ```bash
 python nbedr.py create-embeddings \
     --source local \
@@ -885,7 +931,8 @@ python nbedr.py create-embeddings \
     --aws-elasticsearch-endpoint https://your-domain.region.es.amazonaws.com
 ```
 
-5. **Use PGVector:**
+1. **Use PGVector:**
+
 ```bash
 python nbedr.py create-embeddings \
     --source local \
@@ -895,7 +942,8 @@ python nbedr.py create-embeddings \
     --pgvector-database vectordb
 ```
 
-6. **Search for similar documents:**
+1. **Search for similar documents:**
+
 ```bash
 python nbedr.py search \
     --query "machine learning algorithms" \
@@ -1031,32 +1079,38 @@ When processing documents for AI, chunking determines how well your AI system ca
 ### Chunking Strategies Explained
 
 #### 🎯 **Semantic Chunking** (Recommended for Most Use Cases)
+
 **What it does**: Uses AI to understand the meaning and flow of your text, then creates natural breakpoints where topics change.
 
 **Think of it like**: A smart editor who reads your document and says "this paragraph is about marketing, but this next section switches to finance" and makes a cut there.
 
-**Best for**: 
+**Best for**:
+
 - Mixed content (reports, manuals, articles)
 - Documents with varying topic sections
 - When you want the highest quality results
 
 **Configuration**:
+
 ```env
 CHUNKING_STRATEGY=semantic
 CHUNK_SIZE=512
 ```
 
 #### 📏 **Fixed-Size Chunking** (Most Predictable)
+
 **What it does**: Creates chunks of exactly the same size, like cutting a rope into equal lengths.
 
 **Think of it like**: Using a ruler to mark off exact measurements - every piece is the same size.
 
 **Best for**:
+
 - Consistent document types (legal docs, technical manuals)
 - When you need predictable processing times
 - Large volumes of similar content
 
 **Configuration**:
+
 ```env
 CHUNKING_STRATEGY=fixed
 CHUNK_SIZE=1000
@@ -1064,16 +1118,19 @@ CHUNK_OVERLAP=100
 ```
 
 #### 📝 **Sentence-Aware Chunking** (Natural Boundaries)
+
 **What it does**: Breaks text at sentence endings, keeping complete thoughts together.
 
 **Think of it like**: A careful reader who never cuts off someone mid-sentence.
 
 **Best for**:
+
 - Narrative content (stories, case studies)
 - Interview transcripts
 - Conversational content
 
 **Configuration**:
+
 ```env
 CHUNKING_STRATEGY=sentence
 CHUNK_SIZE=500
@@ -1098,11 +1155,13 @@ CHUNK_SIZE=500
 **What is overlap?**: When chunks share some content at their boundaries, like overlapping roof tiles.
 
 **Why use overlap?**:
+
 - **Prevents Context Loss**: Important information spanning chunk boundaries isn't lost
 - **Improves Search**: Better chance of finding relevant information
 - **Maintains Meaning**: Keeps related concepts together
 
 **Overlap Guidelines**:
+
 - **Standard**: 10-20% of chunk size
 - **High Precision Needed**: 20-30% overlap
 - **Performance Focused**: 5-10% overlap
@@ -1118,26 +1177,31 @@ CHUNK_OVERLAP=200
 #### **Chunk Size Impact**
 
 **Larger Chunks (1000+ tokens)**:
+
 - ✅ **Pros**: More context, better for complex topics, fewer total chunks
 - ❌ **Cons**: Less precise retrieval, higher costs, slower processing
 
 **Smaller Chunks (300-500 tokens)**:
+
 - ✅ **Pros**: More precise retrieval, faster processing, lower costs
 - ❌ **Cons**: May lose context, more chunks to manage
 
 #### **Overlap Impact**
 
 **High Overlap (25%+)**:
+
 - ✅ **Pros**: Better information preservation, improved search accuracy
 - ❌ **Cons**: More storage needed, increased processing time
 
 **Low Overlap (5-10%)**:
+
 - ✅ **Pros**: Efficient storage, faster processing
 - ❌ **Cons**: Risk of losing information at boundaries
 
 ### Recommended Configurations by Use Case
 
 #### **Customer Support Knowledge Base**
+
 ```env
 CHUNKING_STRATEGY=semantic
 CHUNK_SIZE=600
@@ -1146,6 +1210,7 @@ CHUNK_OVERLAP=120
 *Why*: Balances quick answers with sufficient context
 
 #### **Legal Document Analysis**
+
 ```env
 CHUNKING_STRATEGY=fixed
 CHUNK_SIZE=1200
@@ -1154,6 +1219,7 @@ CHUNK_OVERLAP=300
 *Why*: Maintains legal context integrity with high overlap
 
 #### **Product Documentation**
+
 ```env
 CHUNKING_STRATEGY=semantic
 CHUNK_SIZE=800
@@ -1162,6 +1228,7 @@ CHUNK_OVERLAP=160
 *Why*: Keeps procedures and concepts together
 
 #### **News and Media Content**
+
 ```env
 CHUNKING_STRATEGY=sentence
 CHUNK_SIZE=400
@@ -1172,16 +1239,19 @@ CHUNK_OVERLAP=80
 ### Performance Considerations
 
 **Cost Optimization**:
+
 - Smaller chunks = Lower embedding costs
 - Less overlap = Lower storage costs
 - Batch processing = Better rate limits
 
 **Quality Optimization**:
+
 - Semantic chunking = Best understanding
 - Higher overlap = Better information retention
 - Larger chunks = More context for complex topics
 
 **Speed Optimization**:
+
 - Fixed chunking = Fastest processing
 - Smaller chunks = Faster search
 - Lower overlap = Less processing time
@@ -1207,6 +1277,7 @@ NBEDR supports **7 different embedding providers**, from major cloud platforms t
 ### 🚀 **Quick Start by Provider**
 
 #### **OpenAI** (Recommended for Most Users)
+
 ```bash
 # Set your API key
 export EMBEDDING_PROVIDER=openai
@@ -1218,6 +1289,7 @@ python nbedr.py create-embeddings --source local --source-path ./documents
 ```
 
 #### **Azure OpenAI** (Enterprise)
+
 ```bash
 # Configure Azure OpenAI
 export EMBEDDING_PROVIDER=azure_openai
@@ -1229,6 +1301,7 @@ python nbedr.py create-embeddings --source local --source-path ./documents
 ```
 
 #### **Ollama** (Local & Free)
+
 ```bash
 # Install and start Ollama
 curl -fsSL https://ollama.ai/install.sh | sh
@@ -1247,6 +1320,7 @@ python nbedr.py create-embeddings --source local --source-path ./documents
 ### 📋 **Complete Configuration Guide**
 
 #### **OpenAI Configuration**
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=openai
@@ -1266,11 +1340,13 @@ EMBEDDING_BATCH_SIZE=100
 ```
 
 **Available Models:**
+
 - `text-embedding-3-large` (3072 dims) - Highest quality, $0.00013/1K tokens
 - `text-embedding-3-small` (1536 dims) - Best balance, $0.00002/1K tokens  
 - `text-embedding-ada-002` (1536 dims) - Legacy, $0.0001/1K tokens
 
 #### **Azure OpenAI Configuration**
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=azure_openai
@@ -1290,6 +1366,7 @@ EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 #### **AWS Bedrock Configuration**
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=aws_bedrock
@@ -1304,12 +1381,14 @@ EMBEDDING_MODEL=amazon.titan-embed-text-v1
 ```
 
 **Available Models:**
+
 - `amazon.titan-embed-text-v1` (1536 dims) - Amazon's embedding model
 - `amazon.titan-embed-text-v2:0` (1024 dims) - Latest Amazon model
 - `cohere.embed-english-v3` (1024 dims) - Cohere English embeddings
 - `cohere.embed-multilingual-v3` (1024 dims) - Cohere multilingual
 
 #### **Google Vertex AI Configuration**
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=google_vertex
@@ -1324,12 +1403,14 @@ EMBEDDING_MODEL=textembedding-gecko@003
 ```
 
 **Available Models:**
+
 - `textembedding-gecko@003` (768 dims) - Latest Gecko model
 - `textembedding-gecko@002` (768 dims) - Previous version
 - `text-embedding-004` (768 dims) - Latest general model
 - `text-multilingual-embedding-002` (768 dims) - Multilingual support
 
 #### **LMStudio Configuration** (Local)
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=lmstudio
@@ -1343,12 +1424,14 @@ EMBEDDING_MODEL=your-loaded-model
 ```
 
 **Setup Steps:**
+
 1. Download and install [LMStudio](https://lmstudio.ai/)
 2. Download an embedding model (like `nomic-ai/nomic-embed-text-v1.5-GGUF`)
 3. Load the model and start the local server
 4. Configure NBEDR with the settings above
 
 #### **Ollama Configuration** (Local)
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=ollama
@@ -1362,18 +1445,21 @@ EMBEDDING_MODEL=nomic-embed-text
 ```
 
 **Setup Steps:**
+
 1. Install Ollama: `curl -fsSL https://ollama.ai/install.sh | sh`
 2. Start Ollama: `ollama serve`
 3. Pull an embedding model: `ollama pull nomic-embed-text`
 4. Configure NBEDR with the settings above
 
 **Popular Embedding Models:**
+
 - `nomic-embed-text` (768 dims) - High-quality English embeddings
 - `mxbai-embed-large` (1024 dims) - Large general-purpose model
 - `snowflake-arctic-embed` (1024 dims) - Snowflake's model
 - `all-minilm` (384 dims) - Lightweight multilingual
 
 #### **Llama.cpp Configuration** (Local)
+
 ```env
 # Provider selection
 EMBEDDING_PROVIDER=llamacpp
@@ -1388,6 +1474,7 @@ LLAMACPP_API_KEY=optional_api_key
 ```
 
 **Setup Steps:**
+
 1. Install llama-cpp-python: `pip install llama-cpp-python[server]`
 2. Download a GGUF embedding model
 3. Start the server: `python -m llama_cpp.server --model path/to/model.gguf --embedding`
@@ -1396,42 +1483,49 @@ LLAMACPP_API_KEY=optional_api_key
 ### 🎯 **Provider Selection Guide**
 
 #### **Choose OpenAI when:**
+
 - You want the highest quality embeddings
 - Cost is not the primary concern
 - You need reliable, proven performance
 - You're building a production application
 
 #### **Choose Azure OpenAI when:**
+
 - You're in an enterprise environment
 - You need compliance guarantees (SOC 2, HIPAA)
 - You're already using Azure services
 - You need dedicated capacity and SLAs
 
 #### **Choose AWS Bedrock when:**
+
 - You're already using AWS services
 - You want access to multiple model providers
 - You need enterprise-grade security
 - You prefer AWS pricing models
 
 #### **Choose Google Vertex AI when:**
+
 - You're using Google Cloud Platform
 - You need integration with other Google AI services
 - You want access to Google's latest models
 - You're building multilingual applications
 
 #### **Choose LMStudio when:**
+
 - You're developing and testing locally
 - You want an easy GUI for model management
 - You need to experiment with different models
 - You want local processing without complexity
 
 #### **Choose Ollama when:**
+
 - Privacy is paramount (data never leaves your machine)
 - You want completely free operation
 - You need offline capabilities
 - You're comfortable with command-line tools
 
 #### **Choose Llama.cpp when:**
+
 - You need maximum control and customization
 - You're doing research or advanced development
 - You want to use custom or fine-tuned models
@@ -1452,12 +1546,14 @@ LLAMACPP_API_KEY=optional_api_key
 ### 🔒 **Privacy & Security**
 
 #### **Cloud Providers (OpenAI, Azure, AWS, Google)**
+
 - Data is sent to external servers
 - Subject to provider's privacy policies
 - Enterprise options available with enhanced security
 - Data retention policies vary by provider
 
-#### **Local Providers (LMStudio, Ollama, Llama.cpp)**  
+#### **Local Providers (LMStudio, Ollama, Llama.cpp)**
+
 - Data never leaves your machine
 - Complete privacy and control
 - No internet required for processing
@@ -1484,11 +1580,13 @@ NBEDR allows you to customize the prompts used for generating embeddings to impr
 1. **Use Default Template**: NBEDR includes a default embedding prompt template at `templates/embedding_prompt_template.txt`
 
 2. **Set Custom Template Path**:
+
    ```bash
    export EMBEDDING_PROMPT_TEMPLATE="templates/my_custom_template.txt"
    ```
 
 3. **Or Configure in Environment**:
+
    ```env
    EMBEDDING_PROMPT_TEMPLATE=/path/to/your/custom_template.txt
    ```
@@ -1496,7 +1594,8 @@ NBEDR allows you to customize the prompts used for generating embeddings to impr
 #### **Creating Custom Prompt Templates**
 
 **Example Medical Domain Template** (`templates/medical_template.txt`):
-```
+
+```text
 Generate embeddings for medical literature that capture clinical concepts effectively.
 
 Focus on:
@@ -1513,7 +1612,8 @@ Ensure embeddings enable accurate retrieval for medical information systems.
 ```
 
 **Example Legal Domain Template** (`templates/legal_template.txt`):
-```
+
+```text
 Generate embeddings for legal documents optimized for legal research and analysis.
 
 Focus on:
@@ -1548,7 +1648,8 @@ export EMBEDDING_CUSTOM_PROMPT_VARIABLES='{"domain": "healthcare", "use_case": "
 ```
 
 Then use them in your template:
-```
+
+```text
 Generate embeddings for {domain} content optimized for {use_case}.
 Content: {content}
 ```
@@ -1556,6 +1657,7 @@ Content: {content}
 #### **Configuration Examples**
 
 **Using Environment Variables**:
+
 ```bash
 # Set custom template
 export EMBEDDING_PROMPT_TEMPLATE="templates/technical_docs_template.txt"
@@ -1568,6 +1670,7 @@ python nbedr.py create-embeddings --datapath ./docs --doctype pdf
 ```
 
 **Using CLI Arguments**:
+
 ```bash
 python nbedr.py create-embeddings \
   --datapath ./documents \
@@ -1586,6 +1689,7 @@ python nbedr.py create-embeddings \
 #### **Template Examples by Domain**
 
 See the `templates/` directory for example templates:
+
 - `embedding_prompt_template.txt` - Default general-purpose template
 - `templates/README.md` - Complete template documentation with examples
 
@@ -1597,11 +1701,13 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/tech_docs_template.txt"
 ```
 
 **Academic Research**:
+
 ```bash
 export EMBEDDING_PROMPT_TEMPLATE="templates/academic_template.txt"
 ```
 
 **Business Content**:
+
 ```bash
 export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 ```
@@ -1609,23 +1715,27 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 ### Vector Databases
 
 #### **FAISS** (Facebook AI Similarity Search)
+
 - **Best for**: Local development, high-performance searches, full control
 - **Pros**: Free, very fast, runs locally
 - **Cons**: Requires technical setup, no cloud features
 
-#### **Pinecone** 
+#### **Pinecone**
+
 - **Best for**: Production applications, scaling, managed service
 - **Pros**: Fully managed, excellent performance, built-in scaling
 - **Cons**: Cost increases with usage
 
 #### **ChromaDB**
+
 - **Best for**: Open-source preference, flexibility, development
 - **Pros**: Open source, good documentation, easy to extend
 - **Cons**: Requires more setup than managed services
 
 #### **Azure AI Search** (Enterprise Search Platform)
+
 - **Best for**: Enterprise applications, Microsoft ecosystem, hybrid search
-- **Pros**: 
+- **Pros**:
   - **Enterprise-grade**: Built for large-scale enterprise applications
   - **Hybrid Search**: Combines keyword search, semantic search, and vector search
   - **Rich Filtering**: Advanced filtering, faceting, and aggregation capabilities
@@ -1633,13 +1743,14 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
   - **Multi-modal**: Supports text, images, and structured data
   - **Built-in AI**: Integrated with Azure Cognitive Services for text analysis
   - **High Availability**: 99.9% SLA with automatic failover
-- **Cons**: 
+- **Cons**:
   - **Cost**: Can be expensive for large-scale deployments
   - **Microsoft Lock-in**: Best when already using Azure ecosystem
   - **Complexity**: More complex setup compared to simple vector databases
   - **Learning Curve**: Requires understanding of Azure services
 
 #### **AWS Elasticsearch** (Amazon OpenSearch Service)
+
 - **Best for**: AWS ecosystem, complex analytics, multi-purpose search
 - **Pros**:
   - **AWS Integration**: Seamless integration with other AWS services
@@ -1656,6 +1767,7 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
   - **Version Lag**: May not have latest Elasticsearch features immediately
 
 #### **PGVector** (PostgreSQL with pgvector extension)
+
 - **Best for**: PostgreSQL shops, relational data integration, cost-conscious deployments
 - **Pros**:
   - **Familiar Technology**: Built on PostgreSQL, widely known and trusted
@@ -1688,24 +1800,28 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 #### **Use Case Recommendations**
 
 **Choose FAISS when**:
+
 - Building a prototype or research project
 - Need maximum performance and control
 - Have technical expertise for setup and maintenance
 - Budget is limited
 
 **Choose Pinecone when**:
+
 - Want a simple, managed vector database
 - Need to get to market quickly
 - Prefer specialized vector search capabilities
 - Have predictable usage patterns
 
 **Choose ChromaDB when**:
+
 - Prefer open-source solutions
 - Need customization flexibility
 - Building internal tools
 - Want to avoid vendor lock-in
 
 **Choose Azure AI Search when**:
+
 - Already using Microsoft/Azure ecosystem
 - Need enterprise-grade security and compliance
 - Require hybrid search (keyword + semantic + vector)
@@ -1714,6 +1830,7 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 - Have complex data types (text, images, structured data)
 
 **Choose AWS Elasticsearch when**:
+
 - Already using AWS ecosystem
 - Need comprehensive analytics and dashboarding
 - Have diverse data sources and types
@@ -1722,6 +1839,7 @@ export EMBEDDING_PROMPT_TEMPLATE="templates/business_template.txt"
 - Need multi-tenancy support
 
 **Choose PGVector when**:
+
 - Already using PostgreSQL as primary database
 - Need to combine vector search with relational data
 - Want cost-effective solution with existing infrastructure
@@ -1824,9 +1942,3 @@ For detailed release procedures and troubleshooting, see the [Build Documentatio
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built on the foundation of the [RAFT Toolkit](https://github.com/microsoft/raft-toolkit)
-- Utilizes [LangChain](https://github.com/langchain-ai/langchain) for text processing
-- Powered by [OpenAI](https://openai.com/) embeddings
